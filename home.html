@@ -133,7 +133,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button class="login-btn">Login</button>
+                    <button class="login-btn" onclick="login()" data-bs-dismiss="modal">Login</button>
                 </div>
 
             </div>
@@ -250,6 +250,29 @@ function loadStore() {
                     </div>
                 `);
             });
+        }
+    });
+}
+/* DATA LOGIN VIA AJAX */
+function login() {
+    let username = $("#username").val();
+    let password = $("#password").val();
+    let isAdmin = $("#isAdmin").is(":checked");
+
+    $.ajax({
+        url: "login.php",
+        method: "POST",
+        data: {
+            username: username,
+            password: password,
+            isAdmin: isAdmin
+        },
+        success: function(res) {
+            if (res.success) {
+                location.href = "library.html";
+            } else {
+                alert(res.message);
+            }
         }
     });
 }
