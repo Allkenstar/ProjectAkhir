@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,8 +22,13 @@
             min-height: 100vh;
         }
 
-        .card-hover { transition: transform 0.3s ease; }
-        .card-hover:hover { transform: scale(1.05); }
+        .card-hover {
+            transition: transform 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: scale(1.05);
+        }
 
         .nav-gradient {
             background: linear-gradient(to right, #3b82f6, #06b6d4);
@@ -48,9 +54,20 @@
             color: white !important;
         }
 
-        .modal-content { background: #1b2838 !important; border: 1px solid #2a3f55 !important; }
-        .modal-header, .modal-footer { border-color: #2a3f55 !important; }
-        .modal-footer { display: block; text-align: center; }
+        .modal-content {
+            background: #1b2838 !important;
+            border: 1px solid #2a3f55 !important;
+        }
+
+        .modal-header,
+        .modal-footer {
+            border-color: #2a3f55 !important;
+        }
+
+        .modal-footer {
+            display: block;
+            text-align: center;
+        }
 
         /* LOGIN BUTTON FIXED */
         .login-btn {
@@ -85,28 +102,40 @@
                     <h1 class="text-2xl font-bold nav-gradient">GameStore</h1>
 
                     <div class="hidden md:flex space-x-6">
-                        <button onclick="showPage('store')" class="nav-btn px-3 py-2 rounded transition text-gray-300 hover:text-white hover:bg-slate-700 bg-blue-600" data-page="store">Store</button>
-                        <button onclick="showPage('library')" class="nav-btn px-3 py-2 rounded transition text-gray-300 hover:text-white hover:bg-slate-700" data-page="library">Library</button>
-                        <button id="adminNavBtn" onclick="showPage('admin')" class="nav-btn px-3 py-2 rounded transition text-gray-300 hover:text-white hover:bg-slate-700" data-page="admin" style="display:none;">Admin Panel</button>
+                        <button onclick="showPage('store')"
+                            class="nav-btn px-3 py-2 rounded transition text-gray-300 hover:text-white hover:bg-slate-700 bg-blue-600"
+                            data-page="store">Store</button>
+                        <button onclick="showPage('library')"
+                            class="nav-btn px-3 py-2 rounded transition text-gray-300 hover:text-white hover:bg-slate-700"
+                            data-page="library">Library</button>
+                        <button id="adminNavBtn" onclick="showPage('admin')"
+                            class="nav-btn px-3 py-2 rounded transition text-gray-300 hover:text-white hover:bg-slate-700"
+                            data-page="admin" style="display:none;">Admin Panel</button>
                     </div>
                 </div>
 
                 <div class="flex items-center space-x-4">
                     <div class="relative hidden sm:block">
-                        <input type="text" id="searchInput" placeholder="Search games..." onkeyup="filterGames()" class="pl-10 pr-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64">
+                        <input type="text" id="searchInput" placeholder="Search games..." onkeyup="filterGames()"
+                            class="pl-10 pr-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64">
                     </div>
 
-                    <button onclick="showPage('cart')" class="relative p-2 text-gray-300 hover:text-white hover:bg-slate-700 rounded-lg transition">
+                    <button onclick="showPage('cart')"
+                        class="relative p-2 text-gray-300 hover:text-white hover:bg-slate-700 rounded-lg transition">
                         <span class="text-2xl">🛒</span>
-                        <span id="cartBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 items-center justify-center" style="display:none;">0</span>
+                        <span id="cartBadge"
+                            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 items-center justify-center"
+                            style="display:none;">0</span>
                     </button>
 
                     <div id="userSection" class="items-center space-x-3" style="display:none;">
                         <span id="userEmail" class="text-gray-300 hidden sm:block"></span>
-                        <button onclick="logout()" class="p-2 text-gray-300 hover:text-white hover:bg-slate-700 rounded-lg transition">Logout</button>
+                        <button onclick="logout()"
+                            class="p-2 text-gray-300 hover:text-white hover:bg-slate-700 rounded-lg transition">Logout</button>
                     </div>
 
-                    <button id="navLoginBtn" onclick="showLogin()" class="p-2 text-gray-300 hover:text-white hover:bg-slate-700 rounded-lg transition">
+                    <button id="navLoginBtn" onclick="showLogin()"
+                        class="p-2 text-gray-300 hover:text-white hover:bg-slate-700 rounded-lg transition">
                         Login
                     </button>
                 </div>
@@ -129,12 +158,17 @@
                     <input id="username" class="steam-input w-full mb-3" placeholder="Username">
                     <input id="password" type="password" class="steam-input w-full" placeholder="Password">
 
+                    <div class="text-gray-400 text-sm mt-3">
+                        <p>Admin: admin / admin</p>
+                        <p>User: user / user</p>
+                    </div>
+
                     <div id="loginMessage" class="text-red-400 mt-3 hidden">Invalid login</div>
                 </div>
 
                 <div class="modal-footer">
                     <!-- data-bs-dismiss="modal"   LAGI COBA REMOVE INI DARI BUTTON LOGIN -->
-                    <button class="login-btn" onclick="login()" >Login</button> 
+                    <button class="login-btn" onclick="login()">Login</button>
                 </div>
 
             </div>
@@ -172,7 +206,8 @@
         <div id="adminPage" class="page" style="display:none;">
             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-3xl font-bold text-white">Admin Panel</h2>
-                <button onclick="showAddGameForm()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition flex items-center space-x-2">
+                <button onclick="showAddGameForm()"
+                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition flex items-center space-x-2">
                     <span>➕</span>
                     <span>Add Game</span>
                 </button>
@@ -183,34 +218,42 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block text-gray-300 mb-2">Title</label>
-                        <input type="text" id="gameTitle" class="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="text" id="gameTitle"
+                            class="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-gray-300 mb-2">Price</label>
-                            <input type="number" id="gamePrice" step="0.01" class="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="number" id="gamePrice" step="0.01"
+                                class="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
 
                         <div>
                             <label class="block text-gray-300 mb-2">Genre</label>
-                            <input type="text" id="gameGenre" class="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="text" id="gameGenre"
+                                class="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-gray-300 mb-2">Description</label>
-                        <textarea id="gameDescription" rows="3" class="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                        <textarea id="gameDescription" rows="3"
+                            class="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                     </div>
 
                     <div>
                         <label class="block text-gray-300 mb-2">Image URL</label>
-                        <input type="url" id="gameImage" class="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="url" id="gameImage"
+                            class="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
 
                     <div class="flex space-x-3">
-                        <button onclick="saveGame()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition">Save Game</button>
-                        <button onclick="cancelGameForm()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg transition">Cancel</button>
+                        <button onclick="saveGame()"
+                            class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg transition">Save
+                            Game</button>
+                        <button onclick="cancelGameForm()"
+                            class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg transition">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -230,16 +273,16 @@
             modal.show();
         }
         /* LOAD GAME DUMMY VIA AJAX */
-function loadStore() {
-    $.ajax({
-        url: "games.php",
-        method: "GET",
-        dataType: "json",
-        success: function(res) {
-            $("#gamesGrid").empty();
+        function loadStore() {
+            $.ajax({
+                url: "games.php",
+                method: "GET",
+                dataType: "json",
+                success: function (res) {
+                    $("#gamesGrid").empty();
 
-            res.forEach(g => {
-                $("#gamesGrid").append(`
+                    res.forEach(g => {
+                        $("#gamesGrid").append(`
                     <div class="game-card">
                         <img src="${g.image}" class="game-img w-full">
 
@@ -250,104 +293,124 @@ function loadStore() {
                         </div>
                     </div>
                 `);
+                    });
+                }
             });
         }
-    });
-}
-/* DATA LOGIN VIA AJAX */
-function login() {
-    let username = $("#username").val().trim();
-    let password = $("#password").val().trim();
+        /* DATA LOGIN VIA AJAX */
+        function login() {
+            let username = $("#username").val().trim();
+            let password = $("#password").val().trim();
 
-    // Validate input
-    if (!username || !password) {
-        $("#loginMessage").text("Please enter username and password").removeClass("hidden");
-        return;
-    }
-
-    // Hide previous error messages
-    $("#loginMessage").addClass("hidden");
-
-    $.ajax({
-        url: "login.php",
-        method: "POST",
-        dataType: "json",
-        data: {
-            username: username,
-            password: password
-        },
-        success: function(res) {
-            console.log("Login Response:", res); // Debug
-            
-            if (res.success) {
-                // Close modal properly
-                let modalElement = document.getElementById("loginModal");
-                let modal = bootstrap.Modal.getInstance(modalElement);
-                if (modal) {
-                    modal.hide();
-                } else {
-                    // Create instance if it doesn't exist
-                    modal = new bootstrap.Modal(modalElement);
-                    modal.hide();
-                }
-                
-                // Remove backdrop manually (Bootstrap sometimes leaves it)
-                setTimeout(() => {
-                    $('.modal-backdrop').remove();
-                    $('body').removeClass('modal-open').css('overflow', '');
-                }, 300);
-                
-                // Update UI
-                $("#navLoginBtn").hide();
-                $("#userSection").css('display', 'flex');
-                $("#userEmail").text(res.user.name);
-                
-                // Show admin panel if admin
-                if (res.user.role === 'admin') {
-                    $("#adminNavBtn").show();
-                }
-                
-                // Clear form
-                $("#username").val("");
-                $("#password").val("");
-                $("#loginMessage").addClass("hidden");
-                
-                alert("Welcome, " + res.user.name + "!");
-            } else {
-                // Show error message
-                $("#loginMessage").text(res.message || "Invalid username or password").removeClass("hidden");
+            // Validate input
+            if (!username || !password) {
+                $("#loginMessage").text("Please enter username and password").removeClass("hidden");
+                return;
             }
-        },
-        error: function(xhr, status, error) {
-            console.error("AJAX Error:", status, error);
-            console.error("Response:", xhr.responseText);
-            
-            // Try to parse error response
-            try {
-                let errorData = JSON.parse(xhr.responseText);
-                $("#loginMessage").text(errorData.message || "Connection error").removeClass("hidden");
-            } catch(e) {
-                $("#loginMessage").text("Connection error. Please check if login.php exists.").removeClass("hidden");
-            }
-        }
-    });
-}
 
-function logout() {
-    $.ajax({
-        url: "logout.php",
-        method: "POST",
-        success: function() {
-            $("#userSection").hide();
-            $("#navLoginBtn").show();
-            $("#adminNavBtn").hide();
-            $("#userEmail").text("");
-            alert("You have been logged out");
-        }
-    });
-}
 
-/* AUTO LOAD */
-loadStore();
+
+            // Hide previous error messages
+            $("#loginMessage").addClass("hidden");
+
+            $.ajax({
+                url: "login.php",
+                method: "POST",
+                dataType: "json",
+                data: {
+                    username: username,
+                    password: password
+                },
+                success: function (res) {
+                    console.log("Login Response:", res); // Debug
+
+                    if (res.success) {
+                        // Close modal properly
+                        let modalElement = document.getElementById("loginModal");
+                        let modal = bootstrap.Modal.getInstance(modalElement);
+                        if (modal) {
+                            modal.hide();
+                        } else {
+                            // Create instance if it doesn't exist
+                            modal = new bootstrap.Modal(modalElement);
+                            modal.hide();
+                        }
+
+                        // Remove backdrop manually (Bootstrap sometimes leaves it)
+                        setTimeout(() => {
+                            $('.modal-backdrop').remove();
+                            $('body').removeClass('modal-open').css('overflow', '');
+                        }, 300);
+
+                        // Update UI
+                        $("#navLoginBtn").hide();
+                        $("#userSection").css('display', 'flex');
+                        $("#userEmail").text(res.user.username);
+
+                        // Show admin panel if admin
+                        if (res.user.role === 'admin') {
+                            $("#adminNavBtn").show();
+                        }
+
+                        // Clear form
+                        $("#username").val("");
+                        $("#password").val("");
+                        $("#loginMessage").addClass("hidden");
+
+                        alert("Welcome, " + res.user.username + "!");
+                    } else {
+                        // Show error message
+                        $("#loginMessage").text(res.message || "Invalid username or password").removeClass("hidden");
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("AJAX Error:", status, error);
+                    console.error("Response:", xhr.responseText);
+
+                    // Try to parse error response
+                    try {
+                        let errorData = JSON.parse(xhr.responseText);
+                        $("#loginMessage").text(errorData.message || "Connection error").removeClass("hidden");
+                    } catch (e) {
+                        $("#loginMessage").text("Connection error. Please check if login.php exists.").removeClass("hidden");
+                    }
+                }
+            });
+
+        }
+
+        /* LOGOUT FUNCTION */
+        function logout() {
+            $.ajax({
+                url: "logout.php",
+                method: "POST",
+                success: function () {
+                    $("#userSection").hide();
+                    $("#navLoginBtn").show();
+                    $("#adminNavBtn").hide();
+                    $("#userEmail").text("");
+                    alert("You have been logged out");
+                },
+                error: function () {
+                    // Logout locally even if server fails
+                    $("#userSection").hide();
+                    $("#navLoginBtn").show();
+                    $("#adminNavBtn").hide();
+                    $("#userEmail").text("");
+                    alert("Logged out");
+                }
+            });
+        }
+        /* ALLOW ENTER KEY TO SUBMIT */
+        $(document).ready(function () {
+            $("#username, #password").on("keypress", function (e) {
+                if (e.which === 13) { // Enter key
+                    login();
+                }
+            });
+        });
+
+        /* AUTO LOAD */
+        loadStore();
     </script>
 </body>
