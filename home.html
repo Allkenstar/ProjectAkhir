@@ -253,7 +253,13 @@ function loadStore() {
         }
     });
 }
-
+        function showPage(name) {
+            document.querySelectorAll('.page').forEach(el => el.style.display = 'none');
+            const id = name + 'Page';
+            const page = document.getElementById(id);
+            if (page) page.style.display = '';
+            else console.warn('showPage: no page with id', id);
+        }
 /* AUTO LOAD */
 loadStore();
     </script>
