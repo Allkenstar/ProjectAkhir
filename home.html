@@ -133,7 +133,8 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button class="login-btn" onclick="login()" data-bs-dismiss="modal">Login</button>
+                    <!-- data-bs-dismiss="modal"   LAGI COBA REMOVE INI DARI BUTTON LOGIN -->
+                    <button class="login-btn" onclick="login()" >Login</button> 
                 </div>
 
             </div>
@@ -255,24 +256,93 @@ function loadStore() {
 }
 /* DATA LOGIN VIA AJAX */
 function login() {
-    let username = $("#username").val();
-    let password = $("#password").val();
-    let isAdmin = $("#isAdmin").is(":checked");
+    let username = $("#username").val().trim();
+    let password = $("#password").val().trim();
+
+    // Validate input
+    if (!username || !password) {
+        $("#loginMessage").text("Please enter username and password").removeClass("hidden");
+        return;
+    }
+
+    // Hide previous error messages
+    $("#loginMessage").addClass("hidden");
 
     $.ajax({
         url: "login.php",
         method: "POST",
+        dataType: "json",
         data: {
             username: username,
-            password: password,
-            isAdmin: isAdmin
+            password: password
         },
         success: function(res) {
+            console.log("Login Response:", res); // Debug
+            
             if (res.success) {
-                location.href = "library.html";
+                // Close modal properly
+                let modalElement = document.getElementById("loginModal");
+                let modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.hide();
+                } else {
+                    // Create instance if it doesn't exist
+                    modal = new bootstrap.Modal(modalElement);
+                    modal.hide();
+                }
+                
+                // Remove backdrop manually (Bootstrap sometimes leaves it)
+                setTimeout(() => {
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open').css('overflow', '');
+                }, 300);
+                
+                // Update UI
+                $("#navLoginBtn").hide();
+                $("#userSection").css('display', 'flex');
+                $("#userEmail").text(res.user.name);
+                
+                // Show admin panel if admin
+                if (res.user.role === 'admin') {
+                    $("#adminNavBtn").show();
+                }
+                
+                // Clear form
+                $("#username").val("");
+                $("#password").val("");
+                $("#loginMessage").addClass("hidden");
+                
+                alert("Welcome, " + res.user.name + "!");
             } else {
-                alert(res.message);
+                // Show error message
+                $("#loginMessage").text(res.message || "Invalid username or password").removeClass("hidden");
             }
+        },
+        error: function(xhr, status, error) {
+            console.error("AJAX Error:", status, error);
+            console.error("Response:", xhr.responseText);
+            
+            // Try to parse error response
+            try {
+                let errorData = JSON.parse(xhr.responseText);
+                $("#loginMessage").text(errorData.message || "Connection error").removeClass("hidden");
+            } catch(e) {
+                $("#loginMessage").text("Connection error. Please check if login.php exists.").removeClass("hidden");
+            }
+        }
+    });
+}
+
+function logout() {
+    $.ajax({
+        url: "logout.php",
+        method: "POST",
+        success: function() {
+            $("#userSection").hide();
+            $("#navLoginBtn").show();
+            $("#adminNavBtn").hide();
+            $("#userEmail").text("");
+            alert("You have been logged out");
         }
     });
 }
