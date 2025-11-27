@@ -1,5 +1,5 @@
 <?php
-header("Content-Type: application/json");
+header('Content-Type: application/json; charset=utf-8');
 
 $users = [
     [
@@ -51,4 +51,7 @@ $users = [
         'image' => "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=400&h=300&fit=crop"
     ]
 ];
+
+echo json_encode($users, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+exit;
 ?>

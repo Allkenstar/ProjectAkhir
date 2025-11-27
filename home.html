@@ -181,7 +181,13 @@
         <!-- Store Page -->
         <div id="storePage" class="page">
             <h2 class="text-3xl font-bold text-white mb-8">Featured Games</h2>
-            <div id="gamesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+            <!-- Grid of full cards: 2 columns on mobile, 4 on md+ -->
+            <div id="gamesTable" class="bg-slate-800 rounded-xl p-4">
+                <div id="gamesGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 items-stretch">
+                    <!-- cards injected here -->
+                </div>
+            </div>
         </div>
 
         <!-- Library Page -->
@@ -272,31 +278,67 @@
             let modal = new bootstrap.Modal(document.getElementById("loginModal"));
             modal.show();
         }
+        // Showpage function to switch between pages
+        function showPage(page) {
+            const pageIds = ['store', 'library', 'cart', 'admin'];
+            // Toggle page visibility
+            pageIds.forEach(p => {
+                const el = document.getElementById(p + 'Page');
+                if (!el) return;
+                el.style.display = (p === page) ? 'block' : 'none';
+            });
+
+            // Update nav button active styles
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('text-gray-300');
+            });
+            const activeBtn = document.querySelector(`.nav-btn[data-page="${page}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-blue-600', 'text-white');
+                activeBtn.classList.remove('text-gray-300');
+            }
+
+            // Page-specific actions
+            if (page === 'store') {
+                loadStore();
+            }
+
+            // Scroll to top for better UX
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }        
         /* LOAD GAME DUMMY VIA AJAX */
         function loadStore() {
             $.ajax({
-                url: "games.php",
+                url: "game.php",
                 method: "GET",
                 dataType: "json",
                 success: function (res) {
                     $("#gamesGrid").empty();
 
                     res.forEach(g => {
+                        // each row is a responsive "card" — full card on mobile, grid row on md+
                         $("#gamesGrid").append(`
-                    <div class="game-card">
-                        <img src="${g.image}" class="game-img w-full">
-
-                        <div class="p-4">
-                            <h4 class="text-xl font-bold mb-2">${g.title}</h4>
-                            <p class="text-gray-400 text-sm mb-2">${g.genre}</p>
-                            <p class="text-blue-400 font-bold">$${g.price}</p>
+                        <div class="bg-slate-700 rounded-lg p-4 flex flex-col h-full card-hover">
+                            <img src="${g.image || ''}" alt="${g.title}" class="w-full h-36 object-cover rounded-md mb-3">
+                            <h4 class="text-lg font-semibold text-white mb-1">${g.title}</h4>
+                            <p class="text-sm text-gray-400 mb-2">${g.genre || ''}</p>
+                            <p class="text-blue-400 font-bold mb-3">$${parseFloat(g.price || 0).toFixed(2)}</p>
+                            <div class="mt-auto flex items-center justify-between">
+                                <button onclick="previewGame('${encodeURIComponent(g.title)}')" class="px-3 py-1 bg-slate-600 hover:bg-slate-500 rounded text-sm">Preview</button>
+                                <button onclick="addToCart(${g.id || 0})" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded text-sm text-white">Add to Cart</button>
+                            </div>
                         </div>
-                    </div>
                 `);
                     });
+                    },
+                error: function (xhr, status, err) {
+                    console.error("Failed to load games:", status, err);
+                    $("#gamesGrid").html('<div class="text-center text-red-400 col-span-2 md:col-span-4">Could not load games. Check games.php</div>');
                 }
             });
         }
+        
         /* DATA LOGIN VIA AJAX */
         function login() {
             let username = $("#username").val().trim();
@@ -377,6 +419,15 @@
                 }
             });
 
+        }
+        // small helper stubs for actions
+        function previewGame(title) {
+            title = decodeURIComponent(title);
+            alert("Preview: " + title);
+        }
+        function addToCart(id) {
+            // minimal client feedback; implement server-side cart later
+            alert("Added game id " + id + " to cart");
         }
 
         /* LOGOUT FUNCTION */
