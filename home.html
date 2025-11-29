@@ -174,7 +174,25 @@
             </div>
         </div>
     </div>
-
+                <!-- PREVIEW MODAL -->
+               <div class="modal fade" id="previewModal" tabindex="-1">
+                   <div class="modal-dialog modal-dialog-centered">
+                       <div class="modal-content">
+                           <div class="modal-header">
+                               <h5 id="previewTitle" class="modal-title text-white">Game Title</h5>
+                               <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                           </div>
+                           <div class="modal-body">
+                               <img id="previewImage" src="" alt="" class="w-full h-48 object-cover rounded-md mb-3">
+                               <p id="previewDesc" class="text-gray-300 mb-2"></p>
+                               <p id="previewPrice" class="font-bold text-blue-400"></p>
+                           </div>
+                           <div class="modal-footer">
+                               <button id="previewAddBtn" class="login-btn">Add to Cart</button>
+                           </div>
+                       </div>
+                   </div>
+               </div>
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
@@ -282,6 +300,16 @@
         function showPage(page) {
             const pageIds = ['store', 'library', 'cart', 'admin'];
             // Toggle page visibility
+
+            if (page === 'library') {
+                window.location.href = 'library.html';
+                return;
+            }
+            if (page === 'cart') {
+                window.location.href = 'Cart.html';
+                return;
+            }
+
             pageIds.forEach(p => {
                 const el = document.getElementById(p + 'Page');
                 if (!el) return;
@@ -303,6 +331,8 @@
             if (page === 'store') {
                 loadStore();
             }
+
+
 
             // Scroll to top for better UX
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -331,6 +361,8 @@
                         </div>
                 `);
                     });
+
+                    checkOwnershipForGames();
                     },
                 error: function (xhr, status, err) {
                     console.error("Failed to load games:", status, err);
@@ -421,13 +453,141 @@
 
         }
         // small helper stubs for actions
-        function previewGame(title) {
-            title = decodeURIComponent(title);
-            alert("Preview: " + title);
+        async function previewGame(id) {
+            try {
+                const res = await fetch('game.php?id=' + encodeURIComponent(id));
+                if (!res.ok) throw new Error('Game not found');
+                const game = await res.json();
+
+                document.getElementById('previewTitle').innerText = game.title || 'Untitled';
+                document.getElementById('previewDesc').innerText = game.description || '';
+                document.getElementById('previewPrice').innerText = '$' + (parseFloat(game.price || 0).toFixed(2));
+                document.getElementById('previewImage').src = game.image || '';
+
+                // attach add handler (replace previous)
+                const previewAddBtn = document.getElementById('previewAddBtn');
+                previewAddBtn.onclick = function() { addToCart(game.id || id); };
+
+                let modal = new bootstrap.Modal(document.getElementById('previewModal'));
+                modal.show();
+            } catch (e) {
+                console.error('previewGame error:', e);
+                alert('Failed to load game preview.');
+            }
         }
-        function addToCart(id) {
-            // minimal client feedback; implement server-side cart later
-            alert("Added game id " + id + " to cart");
+        
+        async function checkOwnershipForGames() {
+            try {
+                const [libRes, cartRes] = await Promise.all([fetch('library.php'), fetch('cart.php')]);
+                const libJson = libRes.ok ? await libRes.json() : [];
+                const cartJson = cartRes.ok ? await cartRes.json() : {};
+                const ownedIds = Array.isArray(libJson) ? libJson.map(Number) : (Array.isArray(libJson.ids) ? libJson.ids.map(Number) : []);
+                const cartItems = Array.isArray(cartJson.items) ? cartJson.items : (Array.isArray(cartJson) ? cartJson : []);
+                const cartIds = cartItems.map(it => Number(it.id));
+
+                document.querySelectorAll('.add-cart-btn').forEach(btn => {
+                    const id = Number(btn.getAttribute('data-id'));
+                    if (ownedIds.includes(id)) {
+                        btn.disabled = true;
+                        btn.innerText = 'Owned';
+                        btn.classList.remove('bg-blue-600');
+                        btn.classList.add('bg-gray-600');
+                    } else if (cartIds.includes(id)) {
+                        btn.disabled = true;
+                        btn.innerText = 'In Cart';
+                        btn.classList.remove('bg-blue-600');
+                        btn.classList.add('bg-gray-600');
+                    } else {
+                        btn.disabled = false;
+                        btn.innerText = 'Add to Cart';
+                        btn.classList.remove('bg-gray-600');
+                        btn.classList.add('bg-blue-600');
+                    }
+                });
+            } catch (e) {
+                console.error('checkOwnershipForGames error:', e);
+            }
+        }
+
+        // Add to cart: fetch game details then POST to cart.php
+        //Complete rewrite to use server-side cart -nv
+        async function addToCart(id) {
+            try {
+                // Check owned games on server
+                const libRes = await fetch('library.php');
+                if (libRes.ok) {
+                    const owned = await libRes.json();
+                    if (Array.isArray(owned) && owned.map(Number).includes(Number(id))) {
+                        alert('You already own this game.');
+                        return;
+                    }
+                }
+
+                // Check server cart for duplicate
+                const cartRes = await fetch('cart.php');
+                if (cartRes.ok) {
+                    const cartJson = await cartRes.json();
+                    const cartItems = Array.isArray(cartJson.items) ? cartJson.items : [];
+                    if (cartItems.some(it => Number(it.id) === Number(id))) {
+                        alert('This game is already in your cart.');
+                        return;
+                    }
+                }
+                // fetch full game record from server
+                const gRes = await fetch('game.php?id=' + encodeURIComponent(id));
+                if (!gRes.ok) throw new Error('Game not found');
+                const game = await gRes.json();
+
+                // prepare item to send
+                const item = {
+                    id: Number(game.id || id),
+                    title: game.title || '',
+                    price: Number(game.price || 0),
+                    image: game.image || '',
+                    description: game.description || '',
+                    qty: 1
+                };
+
+                const res = await fetch('cart.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'add', item: item })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    updateCartBadge(data.count || 0);
+                    alert('Added "' + item.title + '" to cart');
+                } else {
+                    throw new Error(data.message || 'Failed to add to cart');
+                }
+            } catch (err) {
+                console.error('Add to cart failed:', err);
+                alert('Could not add to cart. See console for details.');
+            }
+        }
+
+        // Fetch cart from server and update UI badge
+        async function getServerCart() {
+            try {
+                const res = await fetch('cart.php');
+                if (!res.ok) throw new Error('Server cart fetch failed');
+                const json = await res.json();
+                updateCartBadge(json.count || 0);
+            } catch (e) {
+                console.error('Failed to read server cart:', e);
+                updateCartBadge(0);
+            }
+        }
+
+        function updateCartBadge(count) {
+            const badge = document.getElementById('cartBadge');
+            if (!badge) return;
+            if (count && count > 0) {
+                badge.style.display = 'flex';
+                badge.innerText = String(count);
+            } else {
+                badge.style.display = 'none';
+            }
         }
 
         /* LOGOUT FUNCTION */
@@ -463,5 +623,6 @@
 
         /* AUTO LOAD */
         loadStore();
+        getServerCart();
     </script>
 </body>

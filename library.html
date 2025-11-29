@@ -126,38 +126,38 @@
 <script>
 // --- DATABASE GAME MOCKUP ---
 // (Karena tidak ada game.php, kita pakai data ini dulu biar jalan)
-const allGamesDB = [
-  { id: 1, title: "Cyberpunk 2077", genre: "RPG / Open World", image: "https://cdn.akamai.steamstatic.com/steam/apps/1091500/header.jpg" },
-  { id: 2, title: "Red Dead Redemption 2", genre: "Adventure / Western", image: "https://cdn.akamai.steamstatic.com/steam/apps/1174180/header.jpg" },
-  { id: 3, title: "Grand Theft Auto V", genre: "Action / Open World", image: "https://cdn.akamai.steamstatic.com/steam/apps/271590/header.jpg" },
-  { id: 4, title: "Counter-Strike 2", genre: "FPS / Competitive", image: "https://cdn.akamai.steamstatic.com/steam/apps/730/header.jpg" },
-  { id: 5, title: "Elden Ring", genre: "RPG / Souls-like", image: "https://cdn.akamai.steamstatic.com/steam/apps/1245620/header.jpg" }
-];
+let allGames = [];
+let ownedGames = [];
 
 // --- FUNGSI UTAMA ---
 
 // 1. Ambil ID game dari LocalStorage
-function getLibrary(){ 
-  // Jika kosong, kita isi dummy data [1, 2, 4] biar langsung terlihat hasilnya saat pertama buka
-  const saved = localStorage.getItem('library');
-  if(!saved) {
-    const dummyData = [1, 2, 4]; 
-    localStorage.setItem('library', JSON.stringify(dummyData));
-    return dummyData;
-  }
-  return JSON.parse(saved); 
-}
+// Fitur ini tak fix biar bisa nyambung ke Ajax PHP -nv
+async function loadGames() {
+  try {
+    const [gamesRes, libRes] = await Promise.all([fetch('game.php'), fetch('library.php')]);
+    allGames = await gamesRes.json();
+    const libIds = await libRes.json();
 
-// 2. Load Games
-function loadGames(){
-  // Simulasi fetch database
-  const libraryIds = getLibrary();
-  
-  // Filter game dari DB berdasarkan ID yang ada di library user
-  const ownedGames = allGamesDB.filter(game => libraryIds.includes(game.id));
-  
-  renderLibrary(ownedGames);
-  updateStats(ownedGames);
+    // libIds should be an array of numbers
+    const ids = Array.isArray(libIds) ? libIds.map(Number) : [];
+
+    ownedGames = allGames.filter(g => ids.includes(Number(g.id)));
+    renderLibrary(ownedGames);
+    updateStats(ownedGames);
+  } catch (err) {
+    console.error('Failed to load server data, falling back to localStorage:', err);
+    // fallback: read localStorage 'library' and use a small embedded DB if game.php failed
+    const libraryIds = JSON.parse(localStorage.getItem('library') || '[]');
+    // If game.php hasn't responded, try to use embedded fallback DB (optional)
+    if (typeof allGamesDB !== 'undefined' && allGamesDB.length) {
+      ownedGames = allGamesDB.filter(g => libraryIds.includes(g.id));
+      renderLibrary(ownedGames);
+      updateStats(ownedGames);
+    } else {
+      document.getElementById('libraryGrid').innerHTML = `<div class="col-12 text-center text-red-400">Unable to load library (server unreachable).</div>`;
+    }
+  }
 }
 
 // 3. Render ke HTML
@@ -178,7 +178,7 @@ function renderLibrary(games){
 
   games.forEach(g => {
     // Generate Random Hours played untuk variasi
-    const hours = Math.floor(Math.random() * 100) + 1; 
+    const hours = Math.floor(Math.random() * 100) + 1; //Sure Why the fuck not -nv
 
     const col = document.createElement('div');
     col.className = 'col-12 col-sm-6 col-md-4 col-lg-3 fade-in';
@@ -215,16 +215,38 @@ function renderLibrary(games){
 function updateStats(games) {
   document.getElementById('total-games').innerText = games.length;
   // Simulasi total jam (random aja karena data dummy)
+  // Bruh -nv
   document.getElementById('total-hours').innerText = (games.length * 45) + 'h'; 
 }
 
 // 5. Fitur Remove
-function removeFromLibrary(id){
-  if(confirm('Are you sure you want to remove this game?')){
-    let lib = getLibrary();
-    lib = lib.filter(x => x !== Number(id));
+// Fitur ini tak fix biar bisa nyambung ke Ajax PHP -nv
+async function removeFromLibrary(id){
+  if(!confirm('Are you sure you want to remove this game?')) return;
+  try {
+    // fetch current server library
+    const resGet = await fetch('library.php');
+    const current = await resGet.json();
+    const updated = (current || []).filter(x => Number(x) !== Number(id));
+    // write updated back to server (POST with new list)
+    const resPost = await fetch('library.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: updated })
+    });
+    const data = await resPost.json();
+    if (data.success) {
+      localStorage.setItem('library', JSON.stringify(data.library));
+      loadGames();
+    } else {
+      throw new Error(data.message || 'Failed to update server');
+    }
+  } catch (e) {
+    console.error('Failed to remove on server, falling back to local:', e);
+    let lib = JSON.parse(localStorage.getItem('library') || '[]');
+    lib = lib.filter(x => Number(x) !== Number(id));
     localStorage.setItem('library', JSON.stringify(lib));
-    loadGames(); // Reload tampilan
+    loadGames();
   }
 }
 
@@ -250,7 +272,7 @@ function playGame(btn, title){
 // 7. Fitur Search Sederhana
 document.getElementById('searchLib').addEventListener('keyup', (e) => {
   const term = e.target.value.toLowerCase();
-  const libraryIds = getLibrary();
+//  const libraryIds = getLibrary(); ini gak perlu lagi soalnya udah ada ownedGames -nv
   const allOwned = allGamesDB.filter(game => libraryIds.includes(game.id));
   
   const filtered = allOwned.filter(g => g.title.toLowerCase().includes(term));

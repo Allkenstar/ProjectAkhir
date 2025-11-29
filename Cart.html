@@ -92,71 +92,152 @@
 </main>
 
 <script>
-function getCart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
-function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
-function getLibrary(){ return JSON.parse(localStorage.getItem('library')||'[]'); }
-function setLibrary(l){ localStorage.setItem('library', JSON.stringify(l)); }
+async function getCart() {
+    const res = await fetch('cart.php');
+    if (!res.ok) throw new Error('Failed to fetch cart: ' + res.status);
+    const json = await res.json();
+    return Array.isArray(json.items) ? json.items : [];
+}
 
-function renderCart(){
-  const cart = getCart();
+// Replace entire cart on server: clear then add items
+async function setCart(items) {
+    // clear server cart
+    await fetch('cart.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'clear' })
+    });
+
+    // add items (if any)
+    for (const it of items || []) {
+        await fetch('cart.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'add', item: it })
+        });
+    }
+}
+
+// Return Promise<Array>
+async function getLibrary() {
+    const res = await fetch('library.php');
+    if (!res.ok) throw new Error('Failed to fetch library: ' + res.status);
+    const json = await res.json();
+    return Array.isArray(json) ? json : [];
+}
+
+// Overwrite server library (POST ids array)
+async function setLibrary(ids) {
+    const res = await fetch('library.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: ids })
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) throw new Error('Failed to set library: ' + (json.message || res.status));
+    return json.library;
+}
+
+async function renderCart(){
   const list = document.getElementById('cartList');
   const totalPrice = document.getElementById('totalPrice');
   list.innerHTML = '';
-  if(cart.length===0){
-    list.innerHTML = '<div class="text-gray-400">Cart is empty.</div>';
-    totalPrice.innerText = '$0.00';
-    return;
+
+    try {
+        const cart = await getCart();
+        if (!cart || cart.length === 0) {
+            list.innerHTML = '<div class="text-gray-400">Cart is empty.</div>';
+            totalPrice.innerText = '$0.00';
+            return;
+        }
+
+        let total = 0;
+        cart.forEach((it, idx) => {
+            total += parseFloat(it.price || 0) * (parseInt(it.qty || 1));
+            const div = document.createElement('div');
+            div.className = 'item-card';
+            div.innerHTML = `
+              <img class="thumb" src="${it.image || ''}" alt="">
+              <div class="flex-grow-1 w-100">
+                <div class="fw-bold">${it.title || 'Untitled'}</div>
+                <div class="text-gray-400">$${parseFloat(it.price || 0).toFixed(2)} × ${it.qty || 1}</div>
+              </div>
+              <div class="w-100 w-sm-auto text-end">
+                <button class="btn btn-sm btn-outline-light" onclick="removeItem(${idx})">Remove</button>
+              </div>
+            `;
+            list.appendChild(div);
+        });
+        totalPrice.innerText = '$' + total.toFixed(2);
+    } catch (e) {
+        console.error('renderCart error:', e);
+        list.innerHTML = '<div class="text-red-400">Failed to load cart.</div>';
+        totalPrice.innerText = '$0.00';
+    }
+}
+
+async function removeItem(idx){
+  try {
+    const cart = await getCart();
+    const item = cart[idx];
+    if (!item || !item.id) throw new Error('Item not found');
+    await fetch('cart.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'remove', id: item.id })
+    });
+    await renderCart();
+  } catch(e){
+        console.error('removeItem failed:', e);
+        alert('Failed to remove item.');
   }
-
-  let total = 0;
-  cart.forEach((it, idx) => {
-    total += parseFloat(it.price || 0);
-    const div = document.createElement('div');
-    div.className = 'item-card';
-    div.innerHTML = `
-      <img class="thumb" src="${it.image}" alt="">
-      <div class="flex-grow-1 w-100">
-        <div class="fw-bold">${it.title}</div>
-        <div class="text-gray-400">$${parseFloat(it.price).toFixed(2)}</div>
-      </div>
-      <div class="w-100 w-sm-auto text-end">
-        <button class="btn btn-sm btn-outline-light" onclick="removeItem(${idx})">Remove</button>
-      </div>
-    `;
-    list.appendChild(div);
-  });
-  totalPrice.innerText = '$' + total.toFixed(2);
 }
 
-function removeItem(idx){
-  const cart = getCart();
-  cart.splice(idx,1);
-  setCart(cart);
-  renderCart();
+async function clearCart(){
+  try {
+        await fetch('cart.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'clear' })
+        });
+        await renderCart();
+    } catch (e) {
+        console.error('clearCart failed:', e);
+        alert('Failed to clear cart.');
+    }
 }
 
-function clearCart(){
-  setCart([]);
-  renderCart();
+async function checkout(){
+  try {
+        const cart = await getCart();
+        if (!cart || cart.length === 0) { alert('Cart is empty'); return; }
+
+        const ids = cart.map(it => Number(it.id));
+
+    const libRes = await fetch('library.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: ids })
+    });
+    const libJson = await libRes.json();
+    if (!libRes.ok || !libJson.success) throw new Error(libJson.message || 'Library save failed');
+
+        // clear server cart
+        await fetch('cart.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'clear' })
+        });
+
+        // redirect to library
+        window.location.href = 'library.html';
+    } catch (e) {
+        console.error('Checkout failed:', e);
+        alert('Checkout failed. See console for details.');
+    }
 }
 
-function checkout(){
-  const cart = getCart();
-  if(cart.length===0){ alert('Cart is empty'); return; }
-  
-  const lib = getLibrary();
-  cart.forEach(it => {
-    if(!lib.includes(Number(it.id))) lib.push(Number(it.id));
-  });
-
-  setLibrary(lib);
-  setCart([]);
-  alert('Purchase complete — added to library!');
-  renderCart();
-  window.location.href = 'library.html';
-}
-
-renderCart();
+document.addEventListener('DOMContentLoaded', function(){ renderCart(); });
 </script>
 
 </body>
