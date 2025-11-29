@@ -1,289 +1,663 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NovaPlay — Store</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>NovaPlay — Store</title>
 
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Bootstrap -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
 
-    <style>
-    body {
-        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%);
-        min-height: 100vh;
-        padding-top: 80px;
-    }
+<style>
+  body{
+    background: linear-gradient(135deg,#0f172a 0%,#1e3a8a 50%,#0f172a 100%);
+    min-height:100vh;
+    padding-top:80px;
+    color:#fff;
+    -webkit-font-smoothing:antialiased;
+  }
 
-    .steam-card {
-        background: #1e293b;
-        border-radius: 14px;
-        overflow: hidden;
-        transition: .25s;
-        box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-    }
-    .steam-card:hover {
-        transform: scale(1.05);
-        box-shadow: 0 10px 18px rgba(0,0,0,0.4);
-    }
-    .steam-img {
-        height: 180px;
-        width: 100%;
-        object-fit: cover;
-    }
+  .steam-card{
+    background:#1e293b;
+    border-radius:8px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    height:100%;
+    box-shadow:0 4px 12px rgba(2,6,23,0.4);
+    transition:transform .18s ease, box-shadow .18s ease;
+  }
+  
+  .steam-card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 12px 24px rgba(2,6,23,0.5);
+  }
 
-    /* Tambahan untuk placeholder Comment jadi putih */
-    textarea::placeholder {
-        color: white !important;
-        opacity: 1;
+  .steam-thumb{
+    width:100%;
+    height:auto;
+    aspect-ratio: 460 / 215;
+    object-fit:cover;
+    display:block;
+    background:#0f172a;
+  }
+
+  .steam-body{
+    padding:14px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    flex-grow:1;
+  }
+  
+  .game-title{ 
+    font-weight:600;
+    font-size:0.95rem;
+    line-height:1.3;
+  }
+  
+  .game-price{ 
+    color:#60a5fa; 
+    font-weight:700;
+    font-size:1.1rem;
+  }
+
+  .btn-add{
+    background:linear-gradient(180deg,#3b82f6,#2563eb) !important;
+    border: none !important;
+    color: #fff !important;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-add:hover{ 
+    filter:brightness(1.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  }
+
+  .btn-add:disabled {
+    background: linear-gradient(180deg, #10b981, #059669) !important;
+    cursor: not-allowed;
+  }
+
+  .reviews-panel{
+    background:#0f172a;
+    border-top:1px solid rgba(255,255,255,0.03);
+    padding:12px;
+  }
+  
+  .reviews-panel.collapsed{ 
+    display:none; 
+  }
+
+  .comment-input{
+    background:#334155 !important;
+    color:white !important;
+    border:1px solid #475569 !important;
+    resize:vertical;
+  }
+  
+  .comment-input::placeholder{ 
+    color: #dce7f6 !important; 
+    opacity: .9; 
+  }
+
+  .comment-input:focus{
+    background:white !important;
+    color:black !important;
+    border-color:#9dd3ff !important;
+    box-shadow:0 4px 14px rgba(59,130,246,0.12);
+  }
+
+  .rating span{ 
+    font-size:20px; 
+    margin-right:4px; 
+    color:#374151; 
+    cursor:pointer; 
+  }
+  
+  .rating .on{ 
+    color:#f6c90e; 
+  }
+
+  .card-wrap{ 
+    display:flex; 
+    height:100%; 
+  }
+
+  .reviews-container{ 
+    max-height:220px; 
+    overflow:auto; 
+    padding-right:6px; 
+  }
+  
+  .reviews-container::-webkit-scrollbar{ 
+    width:8px; 
+  }
+  
+  .reviews-container::-webkit-scrollbar-thumb{ 
+    background: rgba(255,255,255,0.06); 
+    border-radius:6px; 
+  }
+
+  /* Animations */
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+  }
+
+  @keyframes slideIn {
+    from { 
+      transform: translateX(400px);
+      opacity: 0;
     }
-    textarea {
-        color: white;
+    to { 
+      transform: translateX(0);
+      opacity: 1;
     }
+  }
+
+  @keyframes slideOut {
+    from { 
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to { 
+      transform: translateX(400px);
+      opacity: 0;
+    }
+  }
+
+  /* Nav link hover effect */
+  .nav-link {
+    transition: all 0.3s ease;
+    border-radius: 6px;
+  }
+
+  .nav-link:hover {
+    background: rgba(59, 130, 246, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .nav-link.active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.2));
+    color: #60a5fa !important;
+  }
 </style>
-
 </head>
-
 <body>
 
 <!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-  <div class="container">
-    <a class="navbar-brand" href="#">NovaPlay</a>
-
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
-            data-bs-target="#navbarNav">
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); border-bottom: 2px solid rgba(59, 130, 246, 0.3);">
+  <div class="container-fluid" style="max-width: 1600px; padding: 0 20px;">
+    <a class="navbar-brand fw-bold fs-4" href="#" style="color: #60a5fa;">NovaPlay</a>
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
       <span class="navbar-toggler-icon"></span>
     </button>
 
-    <div class="collapse navbar-collapse justify-content-between" id="navbarNav">
-
-      <ul class="navbar-nav">
-        <li class="nav-item"><a class="nav-link" href="home.html">Home</a></li>
-        <li class="nav-item"><a class="nav-link active" href="store.html">Store</a></li>
-        <li class="nav-item"><a class="nav-link" href="library.html">Library</a></li>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link px-3" href="#" id="navHome" onclick="navigateTo('home', event)">
+            <i class="me-1">🏠</i> Home
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link active px-3" href="#" id="navStore" onclick="navigateTo('store', event)">
+            <i class="me-1">🎮</i> Store
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link px-3" href="#" id="navLibrary" onclick="navigateTo('library', event)">
+            <i class="me-1">📚</i> Library
+          </a>
+        </li>
       </ul>
 
       <div class="d-flex align-items-center gap-3">
-        <input type="text" placeholder="Search games..."
-               class="form-control d-none d-sm-block bg-slate-700 text-white border-0"
-               style="width: 250px;">
-        <button class="btn btn-dark">🛒</button>
+        <!-- Search Bar -->
+        <input 
+          type="text" 
+          placeholder="Search games..." 
+          class="form-control d-none d-md-block text-white border-0" 
+          style="width:250px; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(10px);"
+        >
+        
+        <!-- Cart Button with Badge -->
+        <button 
+          id="cartBtn" 
+          class="btn position-relative" 
+          style="background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; padding: 8px 16px; border-radius: 8px;"
+          onclick="toggleCart()"
+        >
+          <span style="font-size: 1.2rem;">🛒</span>
+          <span 
+            id="cartBadge" 
+            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+            style="display:none; font-size: 0.7rem; padding: 4px 6px;"
+          >0</span>
+        </button>
       </div>
-
     </div>
   </div>
 </nav>
 
+<!-- CONTENT -->
+<main class="container-fluid" style="max-width: 1600px; padding: 0 20px;">
+  <div class="py-4">
+    <h1 class="text-white fw-bold mb-4" style="font-size:clamp(1.5rem, 4vw, 2rem)">Featured Games</h1>
 
+    <!-- GRID: HP=2, iPad=3, Desktop=4 -->
+    <div id="gamesGrid" class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
 
-<!-- ============================= -->
-<!--         MAIN STORE PAGE       -->
-<!-- ============================= -->
-<div class="max-w-7xl mx-auto px-4 py-8">
+      <!-- CARD: Cyberpunk -->
+      <div class="col">
+        <div class="card-wrap">
+          <div class="steam-card w-100">
+            <img class="steam-thumb" src="https://cdn.akamai.steamstatic.com/steam/apps/1091500/header.jpg" alt="Cyberpunk 2077">
+            <div class="steam-body">
+              <div>
+                <div class="game-title text-white">Cyberpunk 2077</div>
+                <div class="game-price mt-1">$59.99</div>
+              </div>
 
-    <h2 class="text-3xl font-bold text-white mb-8">Featured Games</h2>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-        <!-- GAME CARD TEMPLATE -->
-        <!-- Kamu bisa duplikat jika ingin tambah game lain -->
-
-        <!-- ====================== -->
-        <!-- Game 1 : Cyberpunk 2077 -->
-        <!-- ====================== -->
-        <div class="steam-card p-0">
-
-            <img src="https://cdn.akamai.steamstatic.com/steam/apps/1091500/header.jpg" class="steam-img">
-
-            <div class="p-4">
-                <h3 class="text-lg font-semibold text-white">Cyberpunk 2077</h3>
-                <p class="text-blue-400 font-bold mt-1">$59.99</p>
-
-                <button class="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2">
-                    Add to Cart
-                </button>
+              <div class="mt-auto">
+                <button class="btn btn-add w-100 rounded add-to-cart" style="padding: 10px 0;" data-id="1091500" data-title="Cyberpunk 2077" data-price="59.99" data-image="https://cdn.akamai.steamstatic.com/steam/apps/1091500/header.jpg">Add to Cart</button>
+              </div>
             </div>
 
-            <!-- REVIEW BOX -->
-            <div class="mt-4 p-4 bg-slate-900 rounded-xl mx-4 mb-4">
-                
-                <!-- ⭐ RATING -->
-                <div class="flex text-yellow-400 text-xl cursor-pointer rating"
-                    data-game="Cyberpunk 2077">
-                    ★★★★★
-                </div>
-
-                <!-- COMMENT INPUT -->
-                <textarea class="form-control bg-slate-700 text-white mt-3 comment-input"
-                          placeholder="Write your review..."></textarea>
-
-                <!-- SUBMIT -->
-                <button class="mt-3 w-full bg-green-600 hover:bg-green-700 text-white rounded-lg py-2 submit-review"
-                        data-game="Cyberpunk 2077">
-                    Submit Review
-                </button>
-
-                <!-- REVIEWS -->
-                <div class="mt-4 text-white review-list" data-game="Cyberpunk 2077">
-                    <h4 class="text-lg font-semibold mb-2">Reviews</h4>
-                    <div class="reviews-container space-y-3"></div>
-                </div>
-
+            <div class="reviews-panel collapsed" id="panel-Cyberpunk2077">
+              <div class="rating mb-2" data-game="Cyberpunk 2077"></div>
+              <textarea class="form-control comment-input mb-2" rows="3" placeholder="Write your review..."></textarea>
+              <button class="btn btn-success w-100 mb-2 submit-review" data-game="Cyberpunk 2077">Submit Review</button>
+              <div class="reviews-container review-list" data-game="Cyberpunk 2077"></div>
             </div>
 
+            <button class="btn btn-link text-white-50 px-3 py-2 w-100 toggle-reviews" style="text-decoration:none; font-size:0.85rem" data-target="Cyberpunk2077">Show Reviews ▾</button>
+          </div>
         </div>
+      </div>
 
+      <!-- CARD: Red Dead -->
+      <div class="col">
+        <div class="card-wrap">
+          <div class="steam-card w-100">
+            <img class="steam-thumb" src="https://cdn.akamai.steamstatic.com/steam/apps/1174180/header.jpg" alt="Red Dead Redemption 2">
+            <div class="steam-body">
+              <div>
+                <div class="game-title text-white">Red Dead Redemption 2</div>
+                <div class="game-price mt-1">$39.99</div>
+              </div>
 
-
-        <!-- ====================== -->
-        <!-- Game 2 : Red Dead 2 -->
-        <!-- ====================== -->
-        <div class="steam-card p-0">
-
-            <img src="https://cdn.akamai.steamstatic.com/steam/apps/1174180/header.jpg" class="steam-img">
-
-            <div class="p-4">
-                <h3 class="text-lg font-semibold text-white">Red Dead Redemption 2</h3>
-                <p class="text-blue-400 font-bold mt-1">$59.99</p>
-
-                <button class="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2">
-                    Add to Cart
-                </button>
+              <div class="mt-auto">
+                <button class="btn btn-add w-100 rounded add-to-cart" style="padding: 10px 0;" data-id="1174180" data-title="Red Dead Redemption 2" data-price="39.99" data-image="https://cdn.akamai.steamstatic.com/steam/apps/1174180/header.jpg">Add to Cart</button>
+              </div>
             </div>
 
-            <!-- REVIEW BOX COPY -->
-            <div class="mt-4 p-4 bg-slate-900 rounded-xl mx-4 mb-4">
-
-                <div class="flex text-yellow-400 text-xl cursor-pointer rating"
-                    data-game="Red Dead Redemption 2">
-                    ★★★★★
-                </div>
-
-                <textarea class="form-control bg-slate-700 text-white mt-3 comment-input"
-                          placeholder="Write your review..."></textarea>
-
-                <button class="mt-3 w-full bg-green-600 hover:bg-green-700 text-white rounded-lg py-2 submit-review"
-                        data-game="Red Dead Redemption 2">
-                    Submit Review
-                </button>
-
-                <div class="mt-4 text-white review-list" data-game="Red Dead Redemption 2">
-                    <h4 class="text-lg font-semibold mb-2">Reviews</h4>
-                    <div class="reviews-container space-y-3"></div>
-                </div>
-
+            <div class="reviews-panel collapsed" id="panel-RedDead2">
+              <div class="rating mb-2" data-game="Red Dead Redemption 2"></div>
+              <textarea class="form-control comment-input mb-2" rows="3" placeholder="Write your review..."></textarea>
+              <button class="btn btn-success w-100 mb-2 submit-review" data-game="Red Dead Redemption 2">Submit Review</button>
+              <div class="reviews-container review-list" data-game="Red Dead Redemption 2"></div>
             </div>
 
+            <button class="btn btn-link text-white-50 px-3 py-2 w-100 toggle-reviews" style="text-decoration:none; font-size:0.85rem" data-target="RedDead2">Show Reviews ▾</button>
+          </div>
         </div>
+      </div>
 
+      <!-- CARD: Watch Dogs -->
+      <div class="col">
+        <div class="card-wrap">
+          <div class="steam-card w-100">
+            <img class="steam-thumb" src="https://cdn.akamai.steamstatic.com/steam/apps/243470/header.jpg" alt="Watch Dogs">
+            <div class="steam-body">
+              <div>
+                <div class="game-title text-white">Watch Dogs</div>
+                <div class="game-price mt-1">$9.99</div>
+              </div>
 
-    </div> <!-- end grid -->
+              <div class="mt-auto">
+                <button class="btn btn-add w-100 rounded add-to-cart" style="padding: 10px 0;" data-id="243470" data-title="Watch Dogs" data-price="9.99" data-image="https://cdn.akamai.steamstatic.com/steam/apps/243470/header.jpg">Add to Cart</button>
+              </div>
+            </div>
 
-</div> <!-- end main -->
+            <div class="reviews-panel collapsed" id="panel-WatchDogs">
+              <div class="rating mb-2" data-game="Watch Dogs"></div>
+              <textarea class="form-control comment-input mb-2" rows="3" placeholder="Write your review..."></textarea>
+              <button class="btn btn-success w-100 mb-2 submit-review" data-game="Watch Dogs">Submit Review</button>
+              <div class="reviews-container review-list" data-game="Watch Dogs"></div>
+            </div>
 
+            <button class="btn btn-link text-white-50 px-3 py-2 w-100 toggle-reviews" style="text-decoration:none; font-size:0.85rem" data-target="WatchDogs">Show Reviews ▾</button>
+          </div>
+        </div>
+      </div>
 
+      <!-- CARD: Star Wars -->
+      <div class="col">
+        <div class="card-wrap">
+          <div class="steam-card w-100">
+            <img class="steam-thumb" src="https://cdn.akamai.steamstatic.com/steam/apps/1774580/header.jpg" alt="Star Wars Jedi: Survivor">
+            <div class="steam-body">
+              <div>
+                <div class="game-title text-white">Star Wars Jedi: Survivor</div>
+                <div class="game-price mt-1">$79.99</div>
+              </div>
 
+              <div class="mt-auto">
+                <button class="btn btn-add w-100 rounded add-to-cart" style="padding: 10px 0;" data-id="1774580" data-title="Star Wars Jedi: Survivor" data-price="79.99" data-image="https://cdn.akamai.steamstatic.com/steam/apps/1774580/header.jpg">Add to Cart</button>
+              </div>
+            </div>
 
+            <div class="reviews-panel collapsed" id="panel-StarWars">
+              <div class="rating mb-2" data-game="Star Wars Jedi: Survivor"></div>
+              <textarea class="form-control comment-input mb-2" rows="3" placeholder="Write your review..."></textarea>
+              <button class="btn btn-success w-100 mb-2 submit-review" data-game="Star Wars Jedi: Survivor">Submit Review</button>
+              <div class="reviews-container review-list" data-game="Star Wars Jedi: Survivor"></div>
+            </div>
 
+            <button class="btn btn-link text-white-50 px-3 py-2 w-100 toggle-reviews" style="text-decoration:none; font-size:0.85rem" data-target="StarWars">Show Reviews ▾</button>
+          </div>
+        </div>
+      </div>
 
-<!-- ======================================== -->
-<!-- JAVASCRIPT REVIEW SYSTEM (AJAX + RATING) -->
-<!-- ======================================== -->
+      <!-- CARD: GTA V -->
+      <div class="col">
+        <div class="card-wrap">
+          <div class="steam-card w-100">
+            <img class="steam-thumb" src="https://cdn.akamai.steamstatic.com/steam/apps/271590/header.jpg" alt="Grand Theft Auto V">
+            <div class="steam-body">
+              <div>
+                <div class="game-title text-white">Grand Theft Auto V</div>
+                <div class="game-price mt-1">$29.99</div>
+              </div>
+
+              <div class="mt-auto">
+                <button class="btn btn-add w-100 rounded add-to-cart" style="padding: 10px 0;" data-id="271590" data-title="Grand Theft Auto V" data-price="29.99" data-image="https://cdn.akamai.steamstatic.com/steam/apps/271590/header.jpg">Add to Cart</button>
+              </div>
+            </div>
+
+            <div class="reviews-panel collapsed" id="panel-GTAV">
+              <div class="rating mb-2" data-game="Grand Theft Auto V"></div>
+              <textarea class="form-control comment-input mb-2" rows="3" placeholder="Write your review..."></textarea>
+              <button class="btn btn-success w-100 mb-2 submit-review" data-game="Grand Theft Auto V">Submit Review</button>
+              <div class="reviews-container review-list" data-game="Grand Theft Auto V"></div>
+            </div>
+
+            <button class="btn btn-link text-white-50 px-3 py-2 w-100 toggle-reviews" style="text-decoration:none; font-size:0.85rem" data-target="GTAV">Show Reviews ▾</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD: Counter-Strike 2 -->
+      <div class="col">
+        <div class="card-wrap">
+          <div class="steam-card w-100">
+            <img class="steam-thumb" src="https://cdn.akamai.steamstatic.com/steam/apps/730/header.jpg" alt="Counter-Strike 2">
+            <div class="steam-body">
+              <div>
+                <div class="game-title text-white">Counter-Strike 2</div>
+                <div class="game-price mt-1">Free</div>
+              </div>
+
+              <div class="mt-auto">
+                <button class="btn btn-add w-100 rounded add-to-cart" style="padding: 10px 0;" data-id="730" data-title="Counter-Strike 2" data-price="0.00" data-image="https://cdn.akamai.steamstatic.com/steam/apps/730/header.jpg">Add to Cart</button>
+              </div>
+            </div>
+
+            <div class="reviews-panel collapsed" id="panel-CS2">
+              <div class="rating mb-2" data-game="Counter-Strike 2"></div>
+              <textarea class="form-control comment-input mb-2" rows="3" placeholder="Write your review..."></textarea>
+              <button class="btn btn-success w-100 mb-2 submit-review" data-game="Counter-Strike 2">Submit Review</button>
+              <div class="reviews-container review-list" data-game="Counter-Strike 2"></div>
+            </div>
+
+            <button class="btn btn-link text-white-50 px-3 py-2 w-100 toggle-reviews" style="text-decoration:none; font-size:0.85rem" data-target="CS2">Show Reviews ▾</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
 <script>
-// =========================
-// INIT RATING STAR
-// =========================
-document.querySelectorAll(".rating").forEach(ratingBox => {
-    ratingBox.innerHTML = "";
-    for (let i = 1; i <= 5; i++) {
-        let star = document.createElement("span");
-        star.innerHTML = "★";
-        star.dataset.value = i;
+// ========== NAVIGATION SYSTEM ==========
+function navigateTo(page, event) {
+  event.preventDefault();
+  
+  // Remove active class from all nav links
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.classList.remove('active');
+  });
+  
+  // Add active class to clicked nav link
+  event.target.classList.add('active');
+  
+  // Show notification
+  const pageNames = {
+    'home': 'Home',
+    'store': 'Store',
+    'library': 'Library'
+  };
+  
+  showNotification(`Navigating to ${pageNames[page]}...`);
+  
+  // Simulate page navigation (in real app, you'd change routes)
+  console.log(`Navigating to: ${page}`);
+}
 
-        star.addEventListener("click", () => {
-            ratingBox.dataset.selected = i;
-            updateStars(ratingBox);
-        });
+// ========== CART FUNCTIONS ==========
+function getCart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
+function setCart(c){ localStorage.setItem('cart', JSON.stringify(c)); updateCartBadge(); }
 
-        ratingBox.appendChild(star);
+function updateCartBadge(){
+  const badge = document.getElementById('cartBadge');
+  const cart = getCart();
+  
+  if(cart.length > 0){ 
+    badge.style.display = 'inline-block'; 
+    badge.innerText = cart.length;
+    
+    // Animate badge
+    badge.style.animation = 'none';
+    setTimeout(() => {
+      badge.style.animation = 'pulse 0.5s ease';
+    }, 10);
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function toggleCart() {
+  const cart = getCart();
+  if(cart.length === 0) {
+    showNotification('Your cart is empty!');
+  } else {
+    showNotification(`You have ${cart.length} item(s) in cart`);
+  }
+}
+
+// ========== NOTIFICATION SYSTEM ==========
+function showNotification(message) {
+  // Remove existing notification
+  const existing = document.querySelector('.custom-notification');
+  if(existing) existing.remove();
+  
+  // Create notification
+  const notif = document.createElement('div');
+  notif.className = 'custom-notification';
+  notif.innerHTML = `
+    <div style="
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+      z-index: 9999;
+      animation: slideIn 0.3s ease;
+      font-weight: 500;
+    ">
+      ${message}
+    </div>
+  `;
+  
+  document.body.appendChild(notif);
+  
+  // Auto remove after 2 seconds
+  setTimeout(() => {
+    notif.style.animation = 'slideOut 0.3s ease';
+    setTimeout(() => notif.remove(), 300);
+  }, 2000);
+}
+
+// ========== ADD TO CART ==========
+document.addEventListener('click', (e)=>{
+  if(e.target.matches('.add-to-cart')){
+    const btn = e.target;
+    const item = {
+      id: btn.dataset.id,
+      title: btn.dataset.title,
+      price: btn.dataset.price,
+      image: btn.dataset.image
+    };
+    
+    const cart = getCart();
+    cart.push(item);
+    setCart(cart);
+    
+    btn.innerText = 'Added ✓';
+    btn.disabled = true;
+    btn.style.background = 'linear-gradient(180deg, #10b981, #059669)';
+    
+    showNotification(`${item.title} added to cart!`);
+    
+    setTimeout(()=>{ 
+      btn.innerText = 'Add to Cart'; 
+      btn.disabled = false;
+      btn.style.background = 'linear-gradient(180deg,#3b82f6,#2563eb)';
+    }, 1500);
+  }
+});
+
+updateCartBadge();
+
+// ========== TOGGLE REVIEWS ==========
+document.querySelectorAll('.toggle-reviews').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const target = btn.dataset.target;
+    const panel = document.getElementById('panel-' + target);
+    if(!panel) return;
+    const collapsed = panel.classList.contains('collapsed');
+    if(collapsed){
+      panel.classList.remove('collapsed');
+      btn.innerText = 'Hide Reviews ▴';
+      loadReviews(btn.closest('.steam-card').querySelector('.rating').dataset.game);
+    } else {
+      panel.classList.add('collapsed');
+      btn.innerText = 'Show Reviews ▾';
     }
+  });
 });
 
-function updateStars(box) {
-    let selected = box.dataset.selected || 0;
-    box.querySelectorAll("span").forEach(star => {
-        star.style.color = (star.dataset.value <= selected) ? "#FFD700" : "#444";
-    });
+// Rating stars
+function initRatings(){
+  document.querySelectorAll('.rating').forEach(box=>{
+    box.innerHTML = '';
+    for(let i=1;i<=5;i++){
+      const s = document.createElement('span');
+      s.innerText = '★';
+      s.dataset.value = i;
+      s.addEventListener('mouseenter', ()=> highlight(box, i));
+      s.addEventListener('mouseleave', ()=> highlight(box, box.dataset.selected || 0));
+      s.addEventListener('click', ()=>{
+        box.dataset.selected = i;
+        highlight(box, i);
+      });
+      box.appendChild(s);
+    }
+    highlight(box, box.dataset.selected || 0);
+  });
 }
 
-
-
-// =========================
-// SUBMIT REVIEW AJAX
-// =========================
-document.querySelectorAll(".submit-review").forEach(btn => {
-    btn.addEventListener("click", () => {
-        let game = btn.dataset.game;
-        let rating = btn.parentElement.querySelector(".rating").dataset.selected || 0;
-        let comment = btn.parentElement.querySelector(".comment-input").value.trim();
-
-        if (rating == 0) return alert("Please select rating!");
-        if (comment === "") return alert("Please write a comment!");
-
-        fetch("api/review.php", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `game=${game}&rating=${rating}&comment=${comment}`
-        })
-        .then(res => res.text())
-        .then(response => {
-            alert("Review added!");
-            btn.parentElement.querySelector(".comment-input").value = "";
-            loadReviews(game);
-        });
-    });
-});
-
-
-// =========================
-// LOAD REVIEWS
-// =========================
-function loadReviews(gameName) {
-    fetch("api/get_reviews.php?game=" + encodeURIComponent(gameName))
-    .then(res => res.json())
-    .then(data => {
-        document.querySelectorAll(".review-list").forEach(box => {
-            if (box.dataset.game !== gameName) return;
-
-            let container = box.querySelector(".reviews-container");
-            container.innerHTML = "";
-
-            data.forEach(item => {
-                container.innerHTML += `
-                    <div class="bg-slate-800 p-3 rounded-lg">
-                        <div class="text-yellow-400">Rating: ${"★".repeat(item.rating)}</div>
-                        <div class="text-gray-200 mt-1">${item.comment}</div>
-                        <div class="text-gray-500 text-sm">${item.created_at}</div>
-                    </div>
-                `;
-            });
-        });
-    });
+function highlight(box, n){
+  box.querySelectorAll('span').forEach(s=>{
+    s.classList.toggle('on', Number(s.dataset.value) <= Number(n));
+  });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".review-list").forEach(section => {
-        loadReviews(section.dataset.game);
-    });
+initRatings();
+
+// Submit review
+document.addEventListener('click', (e)=>{
+  if(e.target.matches('.submit-review')){
+    const btn = e.target;
+    const game = btn.dataset.game;
+    const panel = btn.closest('.reviews-panel');
+    const ratingBox = panel.querySelector('.rating');
+    const rating = ratingBox.dataset.selected || 0;
+    const textarea = panel.querySelector('.comment-input');
+    const comment = textarea.value.trim();
+
+    if(rating == 0){ 
+      alert('Please choose a rating (click stars).'); 
+      return; 
+    }
+    if(comment.length < 3){ 
+      alert('Please write a short review (min 3 chars).'); 
+      return; 
+    }
+
+    // Simulate save (replace with real API call)
+    console.log('Review saved:', {game, rating, comment});
+    textarea.value = '';
+    ratingBox.dataset.selected = 0;
+    highlight(ratingBox, 0);
+    alert('Thank you — your review was added.');
+    
+    // Add to display
+    const container = panel.querySelector('.review-list');
+    const html = `
+      <div class="mb-3 p-3 bg-dark rounded">
+        <div class="text-warning mb-1">${'★'.repeat(rating)}${'☆'.repeat(5-rating)}</div>
+        <div class="text-white-50">${escapeHtml(comment)}</div>
+        <div class="text-white-50 small mt-2">Just now</div>
+      </div>`;
+    container.insertAdjacentHTML('afterbegin', html);
+  }
 });
+
+// Load reviews (placeholder)
+function loadReviews(game){
+  const containers = document.querySelectorAll('.review-list');
+  containers.forEach(box=>{
+    if(box.dataset.game !== game) return;
+    if(box.children.length === 0){
+      box.innerHTML = '<div class="text-white-50">No reviews yet. Be the first!</div>';
+    }
+  });
+}
+
+function escapeHtml(s){ 
+  return String(s).replace(/[&<>"']/g, (m)=>({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  }[m])); 
+}
 </script>
-
-
 
 </body>
 </html>

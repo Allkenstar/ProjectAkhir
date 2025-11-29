@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>NovaPlay - Profile & Wallet</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+  /* --- BACKGROUND UTAMA (Sama seperti Library) --- */
+  body { 
+    background: linear-gradient(135deg,#0f172a 0%,#1e3a8a 50%,#0f172a 100%); 
+    color:#fff; 
+    min-height:100vh; 
+    padding-top:80px;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  /* --- GLASS PANEL STYLE --- */
+  .glass-panel { 
+    background: rgba(30, 41, 59, 0.6); 
+    backdrop-filter: blur(10px);
+    border-radius: 16px; 
+    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  /* --- PROFILE STYLES --- */
+  .avatar-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+  }
+  
+  .avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #3b82f6;
+    background: #1e293b;
+  }
+
+  .status-badge {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    background: #10b981;
+    border: 3px solid #1e293b;
+    border-radius: 50%;
+  }
+
+  /* --- WALLET STYLES --- */
+  .wallet-card {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .wallet-card::before {
+    content: '';
+    position: absolute;
+    top: -50px; right: -50px;
+    width: 150px; height: 150px;
+    background: radial-gradient(circle, rgba(96,165,250,0.2) 0%, rgba(0,0,0,0) 70%);
+    border-radius: 50%;
+  }
+
+  .balance-text { font-size: 2.5rem; font-weight: 800; color: #60a5fa; }
+  
+  /* --- TABLE STYLES --- */
+  .custom-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+  .custom-table th { color: #94a3b8; font-weight: 500; padding: 10px; text-align: left; font-size: 0.9rem; }
+  .custom-table td { background: rgba(255,255,255,0.03); padding: 15px; first-child: border-radius: 8px 0 0 8px; last-child: border-radius: 0 8px 8px 0; }
+  .custom-table tr:hover td { background: rgba(255,255,255,0.07); }
+
+  /* Animation */
+  .fade-in { animation: fadeIn 0.4s ease-out; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background: rgba(15,23,42,0.95); border-bottom: 1px solid rgba(255,255,255,0.1);">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="#" style="color:#60a5fa">NovaPlay</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav2">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nav2">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" href="store.html">Store</a></li>
+        <li class="nav-item"><a class="nav-link" href="library.html">Library</a></li>
+        <li class="nav-item"><a class="nav-link active" href="profile.html">Profile & Wallet</a></li>
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+         <span class="badge bg-dark border border-secondary p-2" id="nav-balance">$0.00</span>
+         <div class="bg-blue-600 rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:35px; height:35px;">G</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main class="container py-4 fade-in">
+  <div class="row g-4">
+    
+    <div class="col-lg-4">
+      <div class="glass-panel p-4 text-center h-100">
+        <div class="avatar-container mb-3">
+          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" class="avatar-img" alt="User Avatar">
+          <div class="status-badge" title="Online"></div>
+        </div>
+        
+        <h2 class="fw-bold mb-1">Gamer123</h2>
+        <p class="text-white-50 mb-3">Member since 2024</p>
+        
+        <div class="d-inline-block bg-dark border border-secondary rounded-pill px-3 py-1 mb-4">
+          <span class="text-warning">★</span> Level 42
+        </div>
+
+        <div class="d-grid gap-2">
+          <button class="btn btn-outline-light" onclick="alert('Edit Profile feature coming soon!')">Edit Profile</button>
+          <button class="btn btn-outline-danger" onclick="alert('Logged out')">Log Out</button>
+        </div>
+
+        <hr class="border-secondary my-4">
+
+        <div class="text-start">
+          <h6 class="text-white-50 mb-3 text-uppercase small ls-1">Account Stats</h6>
+          <div class="d-flex justify-content-between mb-2">
+            <span>Games Owned</span>
+            <span class="fw-bold" id="stat-games">12</span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span>Achievements</span>
+            <span class="fw-bold text-warning">145</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span>Reputation</span>
+            <span class="text-success fw-bold">Very Good</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      
+      <div class="wallet-card mb-4 shadow-lg">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <p class="text-white-50 text-uppercase mb-1 small">Current Balance</p>
+            <div class="balance-text" id="main-balance">$0.00</div>
+          </div>
+          <div class="bg-blue-900/30 p-2 rounded text-blue-400">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-wallet2" viewBox="0 0 16 16">
+              <path d="M12.136.326A1.5 1.5 0 0 1 14 1.78V3h.5A1.5 1.5 0 0 1 16 4.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 13.5v-9a1.5 1.5 0 0 1 1.432-1.499L12.136.326zM5.562 3H13V1.78a.5.5 0 0 0-.621-.484L5.562 3zM1.5 4a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z"/>
+            </svg>
+          </div>
+        </div>
+        
+        <div class="mt-4 d-flex gap-3">
+          <button class="btn btn-primary px-4 fw-bold" onclick="addFunds()">+ Add Funds</button>
+          <button class="btn btn-outline-light px-4" onclick="alert('Withdraw feature disabled for demo')">Withdraw</button>
+        </div>
+      </div>
+
+      <div class="glass-panel p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold m-0">Recent Transactions</h5>
+          <button class="btn btn-sm text-white-50" onclick="alert('Downloading CSV...')">Export</button>
+        </div>
+        
+        <div class="table-responsive">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th class="text-end">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="transaction-list">
+              </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<script>
+// --- DATA DUMMY ---
+const user = {
+  name: "Gamer123",
+  balance: 150.00, // Saldo Awal
+  gamesCount: 8
+};
+
+const transactions = [
+  { date: "29 Nov 2025", desc: "Purchase: Cyberpunk 2077", type: "debit", amount: 59.99, status: "Completed" },
+  { date: "28 Nov 2025", desc: "Wallet Top-Up", type: "credit", amount: 100.00, status: "Success" },
+  { date: "25 Nov 2025", desc: "Purchase: Stardew Valley", type: "debit", amount: 14.99, status: "Completed" },
+  { date: "20 Nov 2025", desc: "Refund: Bad Game", type: "credit", amount: 29.99, status: "Refunded" },
+];
+
+// --- LOGIC ---
+
+function initPage() {
+  updateBalanceDisplay();
+  document.getElementById('stat-games').innerText = user.gamesCount;
+  renderTransactions();
+}
+
+function updateBalanceDisplay() {
+  const formatted = '$' + user.balance.toFixed(2);
+  document.getElementById('main-balance').innerText = formatted;
+  document.getElementById('nav-balance').innerText = formatted;
+}
+
+function renderTransactions() {
+  const tbody = document.getElementById('transaction-list');
+  tbody.innerHTML = '';
+  
+  transactions.forEach(trx => {
+    const isCredit = trx.type === 'credit';
+    const amountColor = isCredit ? 'text-success' : 'text-danger'; // Hijau jika masuk, Merah jika keluar
+    const sign = isCredit ? '+' : '-';
+    
+    const row = `
+      <tr>
+        <td class="text-white-50">${trx.date}</td>
+        <td class="fw-bold">${trx.desc}</td>
+        <td><span class="badge bg-secondary bg-opacity-50 text-white-50">${trx.status}</span></td>
+        <td class="text-end fw-bold ${amountColor}">${sign}$${trx.amount.toFixed(2)}</td>
+      </tr>
+    `;
+    tbody.innerHTML += row;
+  });
+}
+
+function addFunds() {
+  const amount = prompt("Enter amount to add ($):", "50");
+  if (amount && !isNaN(amount)) {
+    const val = parseFloat(amount);
+    if(val <= 0) return alert("Invalid amount");
+
+    // Update Saldo
+    user.balance += val;
+    
+    // Tambah ke History (Simulasi)
+    const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    transactions.unshift({
+      date: today,
+      desc: "Wallet Top-Up",
+      type: "credit",
+      amount: val,
+      status: "Success"
+    });
+
+    // Refresh UI
+    updateBalanceDisplay();
+    renderTransactions();
+    
+    // Animasi sukses
+    const btn = document.querySelector('.btn-primary');
+    const oldText = btn.innerText;
+    btn.innerText = "Success ✓";
+    btn.classList.replace('btn-primary', 'btn-success');
+    setTimeout(() => {
+      btn.innerText = oldText;
+      btn.classList.replace('btn-success', 'btn-primary');
+    }, 2000);
+  }
+}
+
+// Jalankan saat load
+initPage();
+</script>
+
+</body>
+</html>

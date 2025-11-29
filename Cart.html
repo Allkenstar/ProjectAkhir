@@ -10,9 +10,49 @@
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-  body{ background: linear-gradient(135deg,#0f172a 0%,#1e3a8a 50%,#0f172a 100%); color:#fff; min-height:100vh; padding-top:80px }
-  .item-card{ background:#1e293b; border-radius:12px; padding:12px; display:flex; gap:12px; align-items:center }
-  .thumb{ width:80px; height:60px; object-fit:cover; border-radius:6px }
+  body{
+    background: linear-gradient(135deg,#0f172a 0%,#1e3a8a 50%,#0f172a 100%);
+    color:#fff;
+    min-height:100vh;
+    padding-top:80px
+  }
+
+  /* ITEM CARD RESPONSIVE */
+  .item-card{
+    background:#1e293b;
+    border-radius:12px;
+    padding:12px;
+    display:flex;
+    gap:12px;
+    align-items:center;
+    flex-wrap: wrap;  /* BIAR TURUN SAAT HP */
+  }
+
+  .thumb{
+    width:100px;
+    height:70px;
+    object-fit:cover;
+    border-radius:6px;
+  }
+
+  /* MOBILE OPTIMIZED */
+  @media(max-width: 576px){
+    .item-card{
+      flex-direction: column;      /* item jadi vertical */
+      align-items:flex-start;
+      text-align:left;
+    }
+
+    .thumb{
+      width:100%;
+      height:150px;
+    }
+
+    .item-card button{
+      width:100%;
+      margin-top:10px;
+    }
+  }
 </style>
 </head>
 <body>
@@ -23,6 +63,7 @@
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav3">
       <span class="navbar-toggler-icon"></span>
     </button>
+
     <div class="collapse navbar-collapse" id="nav3">
       <ul class="navbar-nav me-auto">
         <li class="nav-item"><a class="nav-link" href="store.html">Store</a></li>
@@ -43,9 +84,9 @@
       <div>Total:</div>
       <div id="totalPrice" class="fw-bold text-blue-400">$0.00</div>
     </div>
-    <div class="mt-3 d-flex gap-2">
-      <button class="btn btn-success flex-1" onclick="checkout()">Checkout (Add to Library)</button>
-      <button class="btn btn-outline-light" onclick="clearCart()">Clear</button>
+    <div class="mt-3 d-flex gap-2 flex-wrap">
+      <button class="btn btn-success flex-fill" onclick="checkout()">Checkout (Add to Library)</button>
+      <button class="btn btn-outline-light flex-fill" onclick="clearCart()">Clear</button>
     </div>
   </div>
 </main>
@@ -61,7 +102,11 @@ function renderCart(){
   const list = document.getElementById('cartList');
   const totalPrice = document.getElementById('totalPrice');
   list.innerHTML = '';
-  if(cart.length===0){ list.innerHTML = '<div class="text-muted">Cart is empty.</div>'; totalPrice.innerText = '$0.00'; return; }
+  if(cart.length===0){
+    list.innerHTML = '<div class="text-gray-400">Cart is empty.</div>';
+    totalPrice.innerText = '$0.00';
+    return;
+  }
 
   let total = 0;
   cart.forEach((it, idx) => {
@@ -70,11 +115,11 @@ function renderCart(){
     div.className = 'item-card';
     div.innerHTML = `
       <img class="thumb" src="${it.image}" alt="">
-      <div class="flex-grow-1">
+      <div class="flex-grow-1 w-100">
         <div class="fw-bold">${it.title}</div>
-        <div class="text-muted">$${parseFloat(it.price).toFixed(2)}</div>
+        <div class="text-gray-400">$${parseFloat(it.price).toFixed(2)}</div>
       </div>
-      <div>
+      <div class="w-100 w-sm-auto text-end">
         <button class="btn btn-sm btn-outline-light" onclick="removeItem(${idx})">Remove</button>
       </div>
     `;
@@ -90,20 +135,24 @@ function removeItem(idx){
   renderCart();
 }
 
-function clearCart(){ setCart([]); renderCart(); }
+function clearCart(){
+  setCart([]);
+  renderCart();
+}
 
 function checkout(){
   const cart = getCart();
   if(cart.length===0){ alert('Cart is empty'); return; }
+  
   const lib = getLibrary();
   cart.forEach(it => {
     if(!lib.includes(Number(it.id))) lib.push(Number(it.id));
   });
+
   setLibrary(lib);
   setCart([]);
   alert('Purchase complete — added to library!');
   renderCart();
-  // optionally redirect to library:
   window.location.href = 'library.html';
 }
 
