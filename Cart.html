@@ -155,16 +155,27 @@ async function renderCart(){
             return;
         }
 
+        // Fetch latest game data from game.php
+        const gamesRes = await fetch('game.php');
+        if (!gamesRes.ok) throw new Error('Failed to fetch games data');
+        const games = await gamesRes.json();
+
         let total = 0;
-        cart.forEach((it, idx) => {
-            total += parseFloat(it.price || 0) * (parseInt(it.qty || 1));
+        cart.forEach((cartItem, idx) => {
+            // Find the game data from game.php
+            const gameData = games.find(game => game.id == cartItem.id) || cartItem;
+
+            const price = parseFloat(gameData.price || cartItem.price || 0);
+            const qty = parseInt(cartItem.qty || 1);
+            total += price * qty;
+
             const div = document.createElement('div');
             div.className = 'item-card';
             div.innerHTML = `
-              <img class="thumb" src="${it.image || ''}" alt="">
+              <img class="thumb" src="${gameData.image || cartItem.image || ''}" alt="">
               <div class="flex-grow-1 w-100">
-                <div class="fw-bold">${it.title || 'Untitled'}</div>
-                <div class="text-gray-400">$${parseFloat(it.price || 0).toFixed(2)} × ${it.qty || 1}</div>
+                <div class="fw-bold">${gameData.title || cartItem.title || 'Untitled'}</div>
+                <div class="text-gray-400">$${price.toFixed(2)} × ${qty}</div>
               </div>
               <div class="w-100 w-sm-auto text-end">
                 <button class="btn btn-sm btn-outline-light" onclick="removeItem(${idx})">Remove</button>
@@ -220,19 +231,45 @@ async function checkout(){
             window.location.href = 'home.html';
             return;
         }
-        
+
         const cart = await getCart();
         if (!cart || cart.length === 0) { alert('Cart is empty'); return; }
 
+        // Calculate total cost
+        let total = 0;
+        cart.forEach(game => total += parseFloat(game.price) * parseInt(game.qty || 1));
+
+        // Get user balance
+        const balanceRes = await fetch(`login.php?userId=${userId}`);
+        const balanceJson = await balanceRes.json();
+        if (!balanceRes.ok || !balanceJson.success) throw new Error('Failed to get balance');
+
+        const currentBalance = parseFloat(balanceJson.balance);
+
+        // Check if user has enough balance
+        if (currentBalance < total) {
+            alert(`Insufficient balance! You need $${total.toFixed(2)} but only have $${currentBalance.toFixed(2)}.`);
+            return;
+        }
+
+        // Deduct from balance
+        const deductRes = await fetch('login.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: parseInt(userId), amount: -total })
+        });
+        const deductJson = await deductRes.json();
+        if (!deductRes.ok || !deductJson.success) throw new Error('Failed to deduct balance');
+
         const ids = cart.map(it => Number(it.id));
 
-    const libRes = await fetch('library.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: ids })
-    });
-    const libJson = await libRes.json();
-    if (!libRes.ok || !libJson.success) throw new Error(libJson.message || 'Library save failed');
+        const libRes = await fetch('library.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: ids, merge: true })
+        });
+        const libJson = await libRes.json();
+        if (!libRes.ok || !libJson.success) throw new Error(libJson.message || 'Library save failed');
 
         // clear server cart
         await fetch('cart.php', {
@@ -241,6 +278,7 @@ async function checkout(){
             body: JSON.stringify({ action: 'clear' })
         });
 
+        alert(`Purchase successful! ${cart.length} game(s) added to your library.`);
         // redirect to library
         window.location.href = 'library.html';
     } catch (e) {

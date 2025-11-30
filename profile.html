@@ -202,26 +202,61 @@
 </main> 
 
 <script>
-// --- DATA DUMMY ---
-const user = {
+// --- DATA ---
+let user = {
   name: "SkibidiSigma",
-  balance: 200.00, // Saldo Awal
-  gamesCount: 8
+  balance: 0.00,
+  gamesCount: 0
 };
 
 const transactions = [
-  { date: "29 Nov 2025", desc: "Purchase: Cyberpunk 2077", type: "debit", amount: 59.99, status: "Completed" },
-  { date: "28 Nov 2025", desc: "Wallet Top-Up", type: "credit", amount: 100.00, status: "Success" },
-  { date: "25 Nov 2025", desc: "Purchase: Stardew Valley", type: "debit", amount: 14.99, status: "Completed" },
-  { date: "20 Nov 2025", desc: "Refund: Bad Game", type: "credit", amount: 29.99, status: "Refunded" },
+  
 ];
 
 // --- LOGIC ---
 
-function initPage() {
+async function initPage() {
+  await loadUserData();
   updateBalanceDisplay();
   document.getElementById('stat-games').innerText = user.gamesCount;
   renderTransactions();
+}
+
+async function loadUserData() {
+  const username = localStorage.getItem('username');
+  const userId = localStorage.getItem('userId');
+  const userBalance = localStorage.getItem('userBalance');
+
+  if (username && userId) {
+    user.name = username;
+    user.balance = parseFloat(userBalance || 0);
+    document.getElementById('username').textContent = username;
+
+    // Fetch current balance from server
+    try {
+      const balanceRes = await fetch(`login.php?userId=${userId}`);
+      const balanceJson = await balanceRes.json();
+      if (balanceRes.ok && balanceJson.success) {
+        user.balance = parseFloat(balanceJson.balance);
+        localStorage.setItem('userBalance', user.balance);
+      }
+    } catch (e) {
+      console.error('Failed to fetch balance:', e);
+    }
+
+    // Fetch games count from library
+    try {
+      const libRes = await fetch('library.php');
+      const libJson = await libRes.json();
+      user.gamesCount = Array.isArray(libJson) ? libJson.length : 0;
+    } catch (e) {
+      console.error('Failed to fetch library:', e);
+      user.gamesCount = 0;
+    }
+  } else {
+    alert('Please login first');
+    window.location.href = 'home.html';
+  }
 }
 
 function updateBalanceDisplay() {
@@ -251,38 +286,61 @@ function renderTransactions() {
   });
 }
 
-function addFunds() {
+async function addFunds() {
   const amount = prompt("Enter amount to add ($):", "50");
   if (amount && !isNaN(amount)) {
     const val = parseFloat(amount);
     if(val <= 0) return alert("Invalid amount");
 
-    // Update Saldo
-    user.balance += val;
-    
-    // Tambah ke History (Simulasi)
-    const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    transactions.unshift({
-      date: today,
-      desc: "Wallet Top-Up",
-      type: "credit",
-      amount: val,
-      status: "Success"
-    });
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      alert('Please login first');
+      return;
+    }
 
-    // Refresh UI
-    updateBalanceDisplay();
-    renderTransactions();
-    
-    // Animasi sukses
-    const btn = document.querySelector('.btn-primary');
-    const oldText = btn.innerText;
-    btn.innerText = "Success ✓";
-    btn.classList.replace('btn-primary', 'btn-success');
-    setTimeout(() => {
-      btn.innerText = oldText;
-      btn.classList.replace('btn-success', 'btn-primary');
-    }, 2000);
+    try {
+      const res = await fetch('login.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: parseInt(userId), amount: val })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Update local balance
+        user.balance = parseFloat(data.balance);
+        localStorage.setItem('userBalance', user.balance);
+
+        // Add to transaction history
+        const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        transactions.unshift({
+          date: today,
+          desc: "Wallet Top-Up",
+          type: "credit",
+          amount: val,
+          status: "Success"
+        });
+
+        // Refresh UI
+        updateBalanceDisplay();
+        renderTransactions();
+
+        // Success animation
+        const btn = document.querySelector('.btn-primary');
+        const oldText = btn.innerText;
+        btn.innerText = "Success ✓";
+        btn.classList.replace('btn-primary', 'btn-success');
+        setTimeout(() => {
+          btn.innerText = oldText;
+          btn.classList.replace('btn-success', 'btn-primary');
+        }, 2000);
+      } else {
+        alert('Failed to add funds: ' + (data.message || 'Unknown error'));
+      }
+    } catch (e) {
+      console.error('Add funds failed:', e);
+      alert('Failed to add funds. Please try again.');
+    }
   }
 }
 

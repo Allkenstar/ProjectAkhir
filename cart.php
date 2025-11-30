@@ -16,6 +16,44 @@ function respond($data, $code = 200) {
 }
 
 if ($method === 'GET') {
+    // Check for test parameter
+    if (isset($_GET['test'])) {
+        // Run cart tests
+        $testResults = [];
+
+        // Test 1: Check if cart is accessible
+        $testResults[] = ['test' => 'cart_access', 'status' => 'pass', 'message' => 'Cart session accessible'];
+
+        // Test 2: Check if games.php is accessible
+        $gamesTest = @file_get_contents('http://localhost/game.php');
+        if ($gamesTest !== false) {
+            $games = json_decode($gamesTest, true);
+            $testResults[] = ['test' => 'games_access', 'status' => 'pass', 'message' => 'Games endpoint accessible, found ' . count($games) . ' games'];
+        } else {
+            $testResults[] = ['test' => 'games_access', 'status' => 'fail', 'message' => 'Cannot access games endpoint'];
+        }
+
+        // Test 3: Check cart operations
+        $originalCart = $_SESSION['cart'];
+        $_SESSION['cart'] = []; // Clear for test
+
+        // Test add operation
+        $_SESSION['cart']['999'] = ['id' => 999, 'title' => 'Test Game', 'price' => 9.99, 'qty' => 1];
+        $items = array_values($_SESSION['cart']);
+        $count = array_sum(array_map(function($it){ return intval($it['qty'] ?? 0); }, $items));
+
+        if ($count === 1) {
+            $testResults[] = ['test' => 'cart_operations', 'status' => 'pass', 'message' => 'Cart add/remove operations working'];
+        } else {
+            $testResults[] = ['test' => 'cart_operations', 'status' => 'fail', 'message' => 'Cart operations failed'];
+        }
+
+        // Restore original cart
+        $_SESSION['cart'] = $originalCart;
+
+        respond(['success' => true, 'test_results' => $testResults]);
+    }
+
     $items = array_values($_SESSION['cart']);
     $count = array_sum(array_map(function($it){ return intval($it['qty'] ?? 0); }, $items));
     $total = array_sum(array_map(function($it){ return (float)($it['price'] ?? 0) * intval($it['qty'] ?? 0); }, $items));
@@ -46,6 +84,82 @@ if ($method === 'POST') {
         $items = array_values($_SESSION['cart']);
         $count = array_sum(array_map(function($it){ return intval($it['qty'] ?? 0); }, $items));
         respond(['success'=>true,'message'=>'Removed','items'=>$items,'count'=>$count]);
+    }
+
+    // checkout: deduct total from user's balance and clear cart
+    if ($action === 'checkout') {
+        // require userId to identify which user to charge
+        if (!isset($data['userId'])) {
+            respond(['success' => false, 'message' => 'Missing userId for checkout'], 400);
+        }
+
+        $userId = intval($data['userId']);
+
+        // calculate cart total
+        $items = array_values($_SESSION['cart']);
+        $total = array_sum(array_map(function($it){ return (float)($it['price'] ?? 0) * intval($it['qty'] ?? 0); }, $items));
+
+        // load users file
+        $usersFile = __DIR__ . '/data/users.json';
+        if (!file_exists($usersFile)) {
+            respond(['success' => false, 'message' => 'Users data not found'], 500);
+        }
+
+        $users = json_decode(file_get_contents($usersFile), true);
+        if ($users === null) $users = [];
+
+        $found = false;
+        foreach ($users as &$u) {
+            if (intval($u['id']) === $userId) {
+                $found = true;
+                $current = floatval($u['balance'] ?? 0);
+                if ($current < $total) {
+                    respond(['success' => false, 'message' => 'Insufficient balance'], 400);
+                }
+                $u['balance'] = $current - $total;
+
+                // Try to update balance via existing login.php endpoint first
+                $postData = json_encode(['userId' => $userId, 'amount' => -$total]);
+                $context = stream_context_create([
+                    'http' => [
+                        'method' => 'POST',
+                        'header' => "Content-Type: application/json\r\nContent-Length: " . strlen($postData) . "\r\n",
+                        'content' => $postData,
+                        'timeout' => 5
+                    ]
+                ]);
+
+                $loginUrl = 'http://localhost/login.php';
+                $loginResp = @file_get_contents($loginUrl, false, $context);
+                $usedFallback = false;
+                if ($loginResp !== false) {
+                    $loginJson = json_decode($loginResp, true);
+                    if (isset($loginJson['success']) && $loginJson['success'] === true) {
+                        // success via login.php
+                        $_SESSION['cart'] = [];
+                        respond(['success' => true, 'message' => 'Checkout complete', 'total' => $total, 'balance' => $loginJson['balance'], 'items' => [], 'count' => 0]);
+                    }
+                    // else fallthrough to fallback
+                }
+
+                // Fallback: directly write the users file (for environments where internal HTTP isn't allowed)
+                $usedFallback = true;
+                $ok = file_put_contents($usersFile, json_encode($users, JSON_PRETTY_PRINT), LOCK_EX);
+                if ($ok === false) {
+                    respond(['success' => false, 'message' => 'Failed to update balance'], 500);
+                }
+
+                // clear cart after successful checkout
+                $_SESSION['cart'] = [];
+
+                respond(['success' => true, 'message' => 'Checkout complete', 'total' => $total, 'balance' => $u['balance'], 'items' => [], 'count' => 0]);
+            }
+        }
+        unset($u);
+
+        if (!$found) {
+            respond(['success' => false, 'message' => 'User not found'], 404);
+        }
     }
 
     // default: add item

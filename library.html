@@ -10,11 +10,47 @@
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
+  :root {
+    --bg-primary: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%);
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #0f172a;
+    --text-primary: #ffffff;
+    --text-secondary: #94a3b8;
+    --border-color: rgba(255,255,255,0.1);
+    --card-bg: rgba(30, 41, 59, 0.7);
+    --input-bg: #1b2838;
+    --input-border: #3b4450;
+    --input-focus-bg: #0f1926;
+    --input-focus-border: #67c1f5;
+    --modal-bg: #1b2838;
+    --modal-border: #2a3f55;
+    --nav-bg: rgba(15,23,42,0.95);
+    --nav-border: rgba(255,255,255,0.1);
+  }
+
+  [data-theme="light"] {
+    --bg-primary: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%);
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #f1f5f9;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: rgba(0,0,0,0.1);
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --input-bg: #ffffff;
+    --input-border: #cbd5e1;
+    --input-focus-bg: #f8fafc;
+    --input-focus-border: #3b82f6;
+    --modal-bg: #ffffff;
+    --modal-border: #e2e8f0;
+    --nav-bg: rgba(255,255,255,0.95);
+    --nav-border: rgba(0,0,0,0.1);
+  }
+
   /* --- BACKGROUND UTAMA (Sesuai Request) --- */
-  body { 
-    background: linear-gradient(135deg,#0f172a 0%,#1e3a8a 50%,#0f172a 100%); 
-    color:#fff; 
-    min-height:100vh; 
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height:100vh;
     padding-top:80px;
     font-family: system-ui, -apple-system, sans-serif;
   }
@@ -113,6 +149,7 @@
             <small class="text-success">Online</small>
         </div>
         <button onclick="logout()" class="btn btn-sm btn-outline-light">Logout</button>
+        <button id="themeToggle" class="btn btn-sm btn-outline-light" onclick="toggleTheme()" title="Toggle Theme">🌙</button>
         <div class="bg-blue-600 rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:35px; height:35px;" id="userAvatar">G</div>
       </div>
     </div>
@@ -428,6 +465,39 @@ style.innerHTML = `
   }
 `;
 document.head.appendChild(style);
+
+// THEME TOGGLE FUNCTION
+function toggleTheme() {
+  const html = document.documentElement;
+  const themeToggle = document.getElementById('themeToggle');
+  const currentTheme = html.getAttribute('data-theme');
+
+  if (currentTheme === 'light') {
+    html.removeAttribute('data-theme');
+    localStorage.setItem('theme', 'dark');
+    themeToggle.innerText = '🌙';
+  } else {
+    html.setAttribute('data-theme', 'light');
+    localStorage.setItem('theme', 'light');
+    themeToggle.innerText = '☀️';
+  }
+}
+
+// LOAD THEME ON PAGE LOAD
+function loadTheme() {
+  const savedTheme = localStorage.getItem('theme');
+  const themeToggle = document.getElementById('themeToggle');
+
+  if (savedTheme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    themeToggle.innerText = '☀️';
+  } else {
+    themeToggle.innerText = '🌙';
+  }
+}
+
+// Call loadTheme on page load
+loadTheme();
 
 // Logout function
 function logout() {
