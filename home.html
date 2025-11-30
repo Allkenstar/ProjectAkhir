@@ -474,6 +474,15 @@
             if (page === 'store') {
                 loadStore();
             }
+            if (page === 'admin') {
+                const userRole = localStorage.getItem('userRole');
+                if (userRole === 'admin') {
+                    loadAdminPanel();
+                } else {
+                    alert('Admin access required');
+                    showPage('store');
+                }
+            }
 
 
 
@@ -487,6 +496,8 @@
                 method: "GET",
                 dataType: "json",
                 success: function (res) {
+                    // Keep a client-side copy for admin UI
+                    window.games = res;
                     $("#gamesGrid").empty();
 
                     res.forEach(g => {
@@ -513,6 +524,218 @@
                     $("#gamesGrid").html('<div class="text-center text-red-400 col-span-2 md:col-span-4">Could not load games. Check games.php</div>');
                 }
             });
+        }
+
+        /* --- ADMIN UI HELPERS (moved add-game here) --- */
+        function loadAdminPanel() {
+            const adminList = $("#adminGamesList");
+            adminList.empty();
+            const list = Array.isArray(window.games) ? window.games : [];
+            list.forEach(game => {
+                adminList.append(`
+                    <div class="bg-slate-800 rounded-lg p-4 flex justify-between items-center">
+                        <div class="flex items-center space-x-4">
+                            <img src="${game.image || ''}" class="w-20 h-20 object-cover rounded" alt="${game.title}">
+                            <div>
+                                <h4 class="font-bold">${game.title}</h4>
+                                <p class="text-gray-400 text-sm">${game.genre || ''} - $${parseFloat(game.price||0).toFixed(2)}</p>
+                            </div>
+                        </div>
+                        <div class="space-x-2">
+                            <button onclick="editGame(${game.id})" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Edit</button>
+                            <button onclick="deleteGame(${game.id})" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg">Delete</button>
+                        </div>
+                    </div>
+                `);
+            });
+        }
+
+        function showAddGameForm() {
+            $("#gameForm").show();
+            $("#formTitle").text("Add New Game");
+            clearGameForm();
+        }
+
+        function cancelGameForm() {
+            $("#gameForm").hide();
+            clearGameForm();
+        }
+
+        function clearGameForm() {
+            $("#gameTitle").val("");
+            $("#gamePrice").val("");
+            $("#gameGenre").val("");
+            $("#gameDescription").val("");
+            $("#gameImage").val("");
+        }
+
+        async function saveGame() {
+            const title = $("#gameTitle").val().trim();
+            const price = parseFloat($("#gamePrice").val());
+            const genre = $("#gameGenre").val().trim();
+            const description = $("#gameDescription").val().trim();
+            const image = $("#gameImage").val().trim();
+            
+            if (!title || !price || !genre || !description || !image) {
+                alert("Please fill all fields");
+                return;
+            }
+
+            const payload = { title, price, genre, description, image };
+            // Admin token - must match server's token in game.php
+            try {
+                // Ensure we have an admin token (may prompt for password)
+                const token = await ensureAdminToken();
+                const resp = await fetch('game.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
+                    body: JSON.stringify(payload)
+                });
+
+                const json = await resp.json().catch(() => null);
+                if (resp.ok && json && json.success) {
+                    // Refresh store and admin list from server
+                    await loadStore();
+                    loadAdminPanel();
+                    cancelGameForm();
+                    alert('Game added successfully!');
+                    return;
+                }
+
+                console.warn('Server add failed', resp.status, json);
+                alert('Server did not persist the game. It will be added locally for this session.');
+            } catch (err) {
+                console.error('Error saving game to server:', err);
+                alert('Error contacting server. Game will be added locally for this session.');
+            }
+
+            // Fallback: add locally to client-side list
+            const localId = (Array.isArray(window.games) ? window.games.length : 0) + 1;
+            const newGameLocal = { id: localId, title, price, genre, description, image };
+            window.games = Array.isArray(window.games) ? window.games.concat([newGameLocal]) : [newGameLocal];
+            // update UI
+            loadStore();
+            loadAdminPanel();
+            cancelGameForm();
+        }
+
+        // Ensure admin token in sessionStorage; if missing, prompt for password and request token
+        async function ensureAdminToken() {
+            let token = sessionStorage.getItem('admin_token');
+            if (token) return token;
+
+            // ask admin for password (simple prompt for demo). In real app, use modal form.
+            const username = localStorage.getItem('username') || 'admin';
+            const pwd = prompt('Enter admin password to perform this action:');
+            if (!pwd) throw new Error('Admin password required');
+
+            // request token from server
+            const resp = await fetch('get_admin_token.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: username, password: pwd })
+            });
+
+            if (!resp.ok) {
+                const j = await resp.json().catch(() => null);
+                throw new Error(j && j.message ? j.message : 'Failed to obtain admin token');
+            }
+            const json = await resp.json();
+            if (!json.success || !json.token) throw new Error('Token not returned');
+            token = json.token;
+            // keep in sessionStorage for this browser session
+            sessionStorage.setItem('admin_token', token);
+            return token;
+        }
+
+        async function deleteGame(gameId) {
+            if (!confirm('Are you sure you want to delete this game?')) return;
+            try {
+                const token = await ensureAdminToken();
+                const resp = await fetch('game.php?id=' + encodeURIComponent(gameId), {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token }
+                });
+                const json = await resp.json().catch(() => null);
+                if (resp.ok && json && json.success) {
+                    await loadStore();
+                    loadAdminPanel();
+                    alert('Game deleted');
+                    return;
+                }
+                console.warn('Delete failed', resp.status, json);
+                alert('Could not delete on server; removing locally for this session.');
+            } catch (e) {
+                console.error('Delete error', e);
+                alert('Could not contact server; removing locally for this session.');
+            }
+
+            // Fallback local removal
+            window.games = (window.games || []).filter(g => Number(g.id) !== Number(gameId));
+            loadStore();
+            loadAdminPanel();
+        }
+
+        function editGame(gameId) {
+            const game = (window.games || []).find(g => Number(g.id) === Number(gameId));
+            if (game) {
+                $("#gameTitle").val(game.title);
+                $("#gamePrice").val(game.price);
+                $("#gameGenre").val(game.genre);
+                $("#gameDescription").val(game.description);
+                $("#gameImage").val(game.image);
+                $("#gameForm").show();
+                $("#formTitle").text("Edit Game");
+
+                // Replace save button temporarily to perform update
+                const saveBtn = $("#gameForm button").first();
+                saveBtn.off('click');
+                saveBtn.on('click', async function () {
+                    // perform PUT request
+                    const payload = {
+                        id: gameId,
+                        title: $("#gameTitle").val().trim(),
+                        price: parseFloat($("#gamePrice").val()),
+                        genre: $("#gameGenre").val().trim(),
+                        description: $("#gameDescription").val().trim(),
+                        image: $("#gameImage").val().trim()
+                    };
+                    try {
+                        const token = await ensureAdminToken();
+                        const resp = await fetch('game.php', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json', 'X-Admin-Token': token },
+                            body: JSON.stringify(payload)
+                        });
+                        const json = await resp.json().catch(() => null);
+                        if (resp.ok && json && json.success) {
+                            await loadStore();
+                            loadAdminPanel();
+                            cancelGameForm();
+                            alert('Game updated');
+                        } else {
+                            console.warn('Update failed', resp.status, json);
+                            alert('Update failed on server; changes applied locally for this session.');
+                            // apply locally
+                            window.games = (window.games || []).map(g => g.id === gameId ? Object.assign({}, g, payload) : g);
+                            loadStore();
+                            loadAdminPanel();
+                            cancelGameForm();
+                        }
+                    } catch (e) {
+                        console.error('Update error', e);
+                        alert('Could not contact server; changes applied locally for this session.');
+                        window.games = (window.games || []).map(g => g.id === gameId ? Object.assign({}, g, payload) : g);
+                        loadStore();
+                        loadAdminPanel();
+                        cancelGameForm();
+                    } finally {
+                        // restore save button click to default add behavior
+                        saveBtn.off('click');
+                        saveBtn.on('click', saveGame);
+                    }
+                });
+            }
         }
         
         /* DATA LOGIN VIA AJAX */

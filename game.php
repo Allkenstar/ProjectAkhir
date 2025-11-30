@@ -1,5 +1,22 @@
 <?php
+// Response header
 header('Content-Type: application/json; charset=utf-8');
+
+// Storage file for persistent games
+$storageDir = __DIR__ . '/data';
+$storageFile = $storageDir . '/games.json';
+
+if (!is_dir($storageDir)) {
+    mkdir($storageDir, 0755, true);
+}
+
+// Read admin token from server-only file (recommended)
+$adminTokenFile = $storageDir . '/admin_token.txt';
+$ADMIN_TOKEN = 'admin123';
+if (file_exists($adminTokenFile)) {
+    $t = trim(@file_get_contents($adminTokenFile));
+    if ($t !== '') $ADMIN_TOKEN = $t;
+}
 
 // Sample review texts for random selection
 $dummyReviews = [
@@ -27,7 +44,8 @@ $dummyReviewers = [
     "SolidGame", "FunTimes", "HappyPlayer", "GamingKing", "ConsoleKid"
 ];
 
-$games = [
+// Default games (used if storage is empty)
+$defaultGames = [
     [
         'id' => 1,
         'title' => "Cyberpunk 2077",
@@ -113,6 +131,27 @@ $games = [
     ]
 ];
 
+// Helper to read storage file
+function read_storage($file) {
+    if (!file_exists($file)) return [];
+    $txt = file_get_contents($file);
+    $arr = json_decode($txt, true);
+    return is_array($arr) ? $arr : [];
+}
+
+// Helper to write storage file
+function write_storage($file, $data) {
+    return file_put_contents($file, json_encode($data, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE));
+}
+
+// Load games from storage if available, otherwise use defaults
+$stored = read_storage($storageFile);
+if (count($stored) > 0) {
+    $games = $stored;
+} else {
+    $games = $defaultGames;
+}
+
 // Function to generate random rating (3.0 to 5.0)
 function generateRandomRating() {
     return round(3 + (mt_rand(0, 20) / 10), 1);
@@ -138,6 +177,177 @@ foreach ($games as &$game) {
     $game['reviews'] = generateRandomReviews($dummyReviews, $dummyReviewers);
 }
 unset($game);
+
+// Helper: validate admin token for write operations
+function check_admin_token($adminToken) {
+    $provided = null;
+    // Check header first
+    $hdr = null;
+    if (!empty($_SERVER['HTTP_X_ADMIN_TOKEN'])) $hdr = $_SERVER['HTTP_X_ADMIN_TOKEN'];
+    if ($hdr) $provided = $hdr;
+
+    // If not in header, attempt to read from JSON body
+    if (!$provided) {
+        $raw = file_get_contents('php://input');
+        $data = json_decode($raw, true);
+        if (is_array($data) && isset($data['admin_token'])) $provided = $data['admin_token'];
+    }
+
+    return $provided === $adminToken;
+}
+
+// Handle POST to add a new game
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!check_admin_token($ADMIN_TOKEN)) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'Unauthorized: invalid admin token']);
+        exit;
+    }
+    // Read JSON body
+    $input = file_get_contents('php://input');
+    $data = json_decode($input, true);
+
+    if (!is_array($data)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Invalid JSON']);
+        exit;
+    }
+
+    // Validate required fields
+    $required = ['title', 'price', 'genre', 'description', 'image'];
+    foreach ($required as $f) {
+        if (!isset($data[$f]) || $data[$f] === '') {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => "Missing field: $f"]);
+            exit;
+        }
+    }
+
+    // Determine next ID
+    $maxId = 0;
+    foreach ($games as $g) {
+        if (isset($g['id']) && is_numeric($g['id'])) $maxId = max($maxId, intval($g['id']));
+    }
+
+    $newGame = [
+        'id' => $maxId + 1,
+        'title' => $data['title'],
+        'price' => floatval($data['price']),
+        'genre' => $data['genre'],
+        'publisher' => isset($data['publisher']) ? $data['publisher'] : '',
+        'description' => $data['description'],
+        'image' => $data['image']
+    ];
+
+    // Append and persist (we persist the games without generated rating/reviews)
+    $persistGames = read_storage($storageFile);
+    if (!is_array($persistGames) || count($persistGames) === 0) {
+        // use current $games base (which may be defaults)
+        $persistGames = $games;
+    }
+
+    $persistGames[] = $newGame;
+
+    if (write_storage($storageFile, $persistGames) === false) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to write games file']);
+        exit;
+    }
+
+    // Return the newly created game (including generated rating/reviews)
+    $newGame['rating'] = generateRandomRating();
+    $newGame['reviews'] = generateRandomReviews($dummyReviews, $dummyReviewers);
+
+    echo json_encode(['success' => true, 'game' => $newGame], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// Handle PUT (edit) - expects JSON body with `id` and fields to change, and admin_token
+if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+    if (!check_admin_token($ADMIN_TOKEN)) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'Unauthorized: invalid admin token']);
+        exit;
+    }
+
+    $input = file_get_contents('php://input');
+    $data = json_decode($input, true);
+    if (!is_array($data) || !isset($data['id'])) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Missing id for update']);
+        exit;
+    }
+
+    $id = intval($data['id']);
+    $stored = read_storage($storageFile);
+    $found = false;
+    foreach ($stored as &$g) {
+        if (isset($g['id']) && intval($g['id']) === $id) {
+            // update allowed fields
+            foreach (['title','price','genre','description','image','publisher'] as $f) {
+                if (isset($data[$f])) $g[$f] = $data[$f];
+            }
+            $found = true;
+            break;
+        }
+    }
+    unset($g);
+
+    if (!$found) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'Game not found']);
+        exit;
+    }
+
+    if (write_storage($storageFile, $stored) === false) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to write games file']);
+        exit;
+    }
+
+    echo json_encode(['success' => true, 'game' => $data]);
+    exit;
+}
+
+// Handle DELETE - accepts JSON body with `id` or query param id, and admin_token
+if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+    if (!check_admin_token($ADMIN_TOKEN)) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'Unauthorized: invalid admin token']);
+        exit;
+    }
+
+    $id = null;
+    // try query param
+    if (isset($_GET['id'])) $id = intval($_GET['id']);
+    $input = file_get_contents('php://input');
+    $data = json_decode($input, true);
+    if (!$id && is_array($data) && isset($data['id'])) $id = intval($data['id']);
+
+    if (!$id) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Missing id for delete']);
+        exit;
+    }
+
+    $stored = read_storage($storageFile);
+    $new = array_values(array_filter($stored, function($g) use ($id) { return intval($g['id']) !== $id; }));
+
+    if (count($new) === count($stored)) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'Game not found']);
+        exit;
+    }
+
+    if (write_storage($storageFile, $new) === false) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Failed to write games file']);
+        exit;
+    }
+
+    echo json_encode(['success' => true, 'deletedId' => $id]);
+    exit;
+}
 
 // Check if a specific game is requested by title or id
 if (isset($_GET['id'])) {
