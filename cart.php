@@ -161,49 +161,13 @@ if ($method === 'POST') {
                 }
                 $u['balance'] = $current - $total;
 
-                // Try to update balance via existing login.php endpoint first
-                $postData = json_encode(['userId' => $userId, 'amount' => -$total]);
-                $context = stream_context_create([
-                    'http' => [
-                        'method' => 'POST',
-                        'header' => "Content-Type: application/json\r\nContent-Length: " . strlen($postData) . "\r\n",
-                        'content' => $postData,
-                        'timeout' => 5
-                    ]
-                ]);
-
-                $loginUrl = 'http://localhost/login.php';
-                $loginResp = @file_get_contents($loginUrl, false, $context);
-                $usedFallback = false;
-                if ($loginResp !== false) {
-                    $loginJson = json_decode($loginResp, true);
-                    if (isset($loginJson['success']) && $loginJson['success'] === true) {
-                        // success via login.php
-                        $_SESSION['cart'] = [];
-                        respond([
-                            'success' => true,
-                            'message' => 'Checkout complete',
-                            'total' => $total,
-                            'balance' => $loginJson['balance'],
-                            'library' => $mergedLib,
-                            'computed_items' => $computed_items,
-                            'session_cart' => $items,
-                            'items' => [],
-                            'count' => 0
-                        ]);
-                    }
-                    // else fallthrough to fallback
-                }
-
-                // Fallback: directly write the users file (for environments where internal HTTP isn't allowed)
-                $usedFallback = true;
+                // Update balance directly in users file (avoid internal HTTP dependency)
                 $ok = file_put_contents($usersFile, json_encode($users, JSON_PRETTY_PRINT), LOCK_EX);
                 if ($ok === false) {
                     respond(['success' => false, 'message' => 'Failed to update balance'], 500);
                 }
 
-                // clear cart after successful checkout
-                // Also merge purchased ids into library.json (server-side)
+                // merge purchased ids into library.json (server-side)
                 $libraryFile = __DIR__ . '/data/library.json';
                 $existingLib = [];
                 if (file_exists($libraryFile)) {
@@ -231,6 +195,7 @@ if ($method === 'POST') {
                         'subtotal' => $price * $qty
                     ];
                 }
+
                 respond(['success' => true, 'message' => 'Checkout complete', 'total' => $total, 'balance' => $u['balance'], 'library' => $mergedLib, 'computed_items' => $computed_items, 'session_cart' => $items, 'items' => [], 'count' => 0]);
             }
         }

@@ -82,6 +82,35 @@ $games = [
         'description' => "Experience Los Santos in this open-world crime saga",
         'image' => "https://image.api.playstation.com/vulcan/ap/rnd/202203/0911/VIB0SeEj9vT6DTv7P4thJLZi.jpg"
     ]
+    ,
+    [
+        'id' => 7,
+        'title' => "Hollow Knight",
+        'price' => 14.99,
+        'genre' => "Metroidvania",
+        'publisher' => "Team Cherry",
+        'description' => "Explore the haunted, ruined kingdom of Hallownest in this atmospheric action-adventure.",
+        'image' => "https://cdn.cloudflare.steamstatic.com/steam/apps/367520/header.jpg"
+    ],
+    [
+        'id' => 8,
+        'title' => "Stardew Valley",
+        'price' => 9.99,
+        'genre' => "Simulation",
+        'publisher' => "ConcernedApe",
+        'description' => "Build the farm of your dreams, befriend villagers, and explore caves and festivals.",
+        'image' => "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/413150/capsule_616x353.jpg?t=1754692865"
+    ]
+    ,
+    [
+        'id' => 9,
+        'title' => "Warframe",
+        'price' => 0.00,
+        'genre' => "MMO Shooter",
+        'publisher' => "Digital Extremes",
+        'description' => "A cooperative free-to-play third-person online action game set in an evolving sci-fi world.",
+        'image' => "https://cdn.cloudflare.steamstatic.com/steam/apps/230410/header.jpg"
+    ]
 ];
 
 // Function to generate random rating (3.0 to 5.0)

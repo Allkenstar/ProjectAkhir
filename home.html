@@ -67,6 +67,39 @@
             transform: scale(1.05);
         }
 
+        /* Game description bar (non-covering) shown below the image on hover */
+        .card-hover { position: relative; overflow: visible; }
+        .game-desc-bar {
+            background: rgba(2,6,23,0.6);
+            color: var(--text-secondary);
+            padding: 8px 10px;
+            box-sizing: border-box;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            line-height: 1.15rem;
+            max-height: 5rem;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(6px);
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255,255,255,0.04);
+            backdrop-filter: blur(6px);
+        }
+
+        .card-hover:hover .game-desc-bar {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .game-desc-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-align: center;
+            max-height: 4.8rem;
+            overflow: hidden;
+        }
+
         .nav-gradient {
             background: linear-gradient(to right, #3b82f6, #06b6d4);
             -webkit-background-clip: text;
@@ -461,6 +494,7 @@
                         $("#gamesGrid").append(`
                         <div class="bg-slate-700 rounded-lg p-4 flex flex-col h-full card-hover">
                             <img src="${g.image || ''}" alt="${g.title}" class="w-full h-36 object-cover rounded-md mb-3">
+                            <div class="game-desc-bar">${(g.description || '').replace(/`/g, '\`')}</div>
                             <h4 class="text-lg font-semibold text-white mb-1">${g.title}</h4>
                             <p class="text-sm text-gray-400 mb-2">${g.genre || ''}</p>
                             <p class="text-blue-400 font-bold mb-3">$${parseFloat(g.price || 0).toFixed(2)}</p>
