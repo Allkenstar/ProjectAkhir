@@ -35,16 +35,25 @@ if ($method === 'POST') {
     }
 
     $ids = array_map('intval', $ids);
-    
-    // Get existing library and merge with new IDs
-    $existing = read_storage($storageFile);
-    $merged = array_values(array_unique(array_merge($existing, $ids)));
 
-    if (file_put_contents($storageFile, json_encode($merged, JSON_PRETTY_PRINT)) === false) {
+    // Decide behavior:
+    // - If client sends { merge: true } or { action: 'add' } -> merge with existing library (checkout flow)
+    // - Otherwise -> overwrite stored library with provided ids (this allows removals to persist)
+    $existing = read_storage($storageFile);
+    $toWrite = [];
+
+    if ((is_array($data) && isset($data['merge']) && $data['merge']) || (is_array($data) && isset($data['action']) && $data['action'] === 'add')) {
+        $toWrite = array_values(array_unique(array_merge($existing, $ids)));
+    } else {
+        // Default: treat provided ids as the full new library (overwrite)
+        $toWrite = array_values(array_unique($ids));
+    }
+
+    if (file_put_contents($storageFile, json_encode($toWrite, JSON_PRETTY_PRINT)) === false) {
         http_response_code(500);
         echo json_encode(['success' => false, 'message' => 'Failed to write storage']);
     } else {
-        echo json_encode(['success' => true, 'library' => $merged]);
+        echo json_encode(['success' => true, 'library' => $toWrite]);
     }
     exit;
 }
