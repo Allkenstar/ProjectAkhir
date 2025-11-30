@@ -186,8 +186,19 @@
                            </div>
                            <div class="modal-body">
                                <img id="previewImage" src="" alt="" class="w-full h-48 object-cover rounded-md mb-3">
+                               <div class="d-flex justify-content-between align-items-center mb-2">
+                                   <div class="text-sm text-white-50">Publisher: <span id="previewPublisher" class="text-white fw-bold"></span></div>
+                                   <div id="previewRating" class="text-yellow-400"></div>
+                               </div>
                                <p id="previewDesc" class="text-gray-300 mb-2"></p>
-                               <p id="previewPrice" class="font-bold text-blue-400"></p>
+                               <p id="previewPrice" class="font-bold text-blue-400 mb-3"></p>
+
+                               <div>
+                                   <h6 class="text-white mb-2">Reviews</h6>
+                                   <div id="previewReviews" class="space-y-3 text-sm text-white-50">
+                                       <!-- reviews injected here -->
+                                   </div>
+                               </div>
                            </div>
                            <div class="modal-footer">
                                <button id="previewAddBtn" class="login-btn">Add to Cart</button>
@@ -202,9 +213,9 @@
         <div id="storePage" class="page">
             <h2 class="text-3xl font-bold text-white mb-8">Featured Games</h2>
 
-            <!-- Grid of full cards: 2 columns on mobile, 4 on md+ -->
+            <!-- Responsive Grid: Mobile (2 cols) → Tablet (3 cols) → Desktop (4 cols) -->
             <div id="gamesTable" class="bg-slate-800 rounded-xl p-4">
-                <div id="gamesGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 items-stretch">
+                <div id="gamesGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 items-stretch">
                     <!-- cards injected here -->
                 </div>
             </div>
@@ -304,10 +315,24 @@
             // Toggle page visibility
 
             if (page === 'library') {
+                const username = localStorage.getItem('username');
+                const userId = localStorage.getItem('userId');
+                if (!username || !userId) {
+                    alert('Please login to view your library');
+                    showLogin();
+                    return;
+                }
                 window.location.href = 'library.html';
                 return;
             }
             if (page === 'cart') {
+                const username = localStorage.getItem('username');
+                const userId = localStorage.getItem('userId');
+                if (!username || !userId) {
+                    alert('Please login to view your cart');
+                    showLogin();
+                    return;
+                }
                 window.location.href = 'Cart.html';
                 return;
             }
@@ -405,6 +430,11 @@
                     console.log("Login Response:", res); // Debug
 
                     if (res.success) {
+                        // Store user info in localStorage for persistence
+                        localStorage.setItem('username', res.user.username);
+                        localStorage.setItem('userId', res.user.id);
+                        localStorage.setItem('userRole', res.user.role);
+                        
                         // Close modal properly
                         let modalElement = document.getElementById("loginModal");
                         let modal = bootstrap.Modal.getInstance(modalElement);
@@ -470,6 +500,47 @@
                 document.getElementById('previewPrice').innerText = '$' + (parseFloat(game.price || 0).toFixed(2));
                 document.getElementById('previewImage').src = game.image || '';
 
+                // Publisher
+                const pubEl = document.getElementById('previewPublisher');
+                if (pubEl) pubEl.innerText = game.publisher || 'Unknown';
+
+                // Rating: render star icons and numeric value
+                const ratingEl = document.getElementById('previewRating');
+                if (ratingEl) {
+                    const rating = parseFloat(game.rating || 0);
+                    const full = Math.floor(rating);
+                    const half = (rating - full) >= 0.5;
+                    let stars = '';
+                    for (let i = 0; i < 5; i++) {
+                        if (i < full) stars += '★';
+                        else stars += '☆';
+                    }
+                    ratingEl.innerHTML = `<span style="color:#f6c94d;font-size:1.05rem;">${stars}</span> <span style="color:#cbd5e1;margin-left:6px;">${rating.toFixed(1)}</span>`;
+                }
+
+                // Reviews
+                const reviewsEl = document.getElementById('previewReviews');
+                if (reviewsEl) {
+                    reviewsEl.innerHTML = '';
+                    const reviews = Array.isArray(game.reviews) ? game.reviews : [];
+                    if (reviews.length === 0) {
+                        reviewsEl.innerHTML = '<div class="text-gray-500">No reviews yet.</div>';
+                    } else {
+                        reviews.forEach(r => {
+                            const rRating = parseFloat(r.rating || 0);
+                            const rFull = Math.floor(rRating);
+                            let rStars = '';
+                            for (let i = 0; i < 5; i++) {
+                                rStars += (i < rFull) ? '★' : '☆';
+                            }
+                            const node = document.createElement('div');
+                            node.className = 'p-2 rounded bg-slate-700';
+                            node.innerHTML = `<div class="d-flex justify-content-between"><div class="fw-bold text-white">${r.user || 'Anonymous'}</div><div style="color:#f6c94d">${rStars} <span style="color:#cbd5e1;margin-left:6px;">${rRating.toFixed(1)}</span></div></div><div class="text-gray-300 mt-1">${r.text || ''}</div>`;
+                            reviewsEl.appendChild(node);
+                        });
+                    }
+                }
+
                 // attach add handler (replace previous)
                 const previewAddBtn = document.getElementById('previewAddBtn');
                 previewAddBtn.onclick = function() { addToCart(game.id || id); };
@@ -518,6 +589,13 @@
         // Add to cart: fetch game details then POST to cart.php
         //Complete rewrite to use server-side cart -nv
         async function addToCart(id) {
+            const username = localStorage.getItem('username');
+            const userId = localStorage.getItem('userId');
+            if (!username || !userId) {
+                alert('Please login to add games to cart');
+                showLogin();
+                return;
+            }
             try {
                 // Check owned games on server
                 const libRes = await fetch('library.php');
@@ -598,6 +676,11 @@
 
         /* LOGOUT FUNCTION */
         function logout() {
+            // Clear localStorage
+            localStorage.removeItem('username');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userRole');
+            
             $.ajax({
                 url: "logout.php",
                 method: "POST",
@@ -630,5 +713,39 @@
         /* AUTO LOAD */
         loadStore();
         getServerCart();
+
+        // RESTORE LOGIN STATE FROM LOCALSTORAGE
+        function restoreLoginState() {
+            const username = localStorage.getItem('username');
+            const userId = localStorage.getItem('userId');
+            const userRole = localStorage.getItem('userRole');
+            
+            if (username && userId) {
+                $("#navLoginBtn").hide();
+                $("#userSection").css('display', 'flex');
+                $("#userEmail").text(username);
+                
+                if (userRole === 'admin') {
+                    $("#adminNavBtn").show();
+                }
+            }
+        }
+        
+        // Call on page load
+        restoreLoginState();
+
+        // SEARCH FUNCTION - Filter games in real-time
+        function filterGames() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const gameCards = document.querySelectorAll('#gamesGrid > div');
+            
+            gameCards.forEach(card => {
+                const title = card.querySelector('h4').textContent.toLowerCase();
+                const genre = card.querySelector('p').textContent.toLowerCase();
+                
+                const matches = title.includes(searchTerm) || genre.includes(searchTerm);
+                card.style.display = matches ? 'block' : 'none';
+            });
+        }
     </script>
 </body>

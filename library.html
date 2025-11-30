@@ -68,28 +68,52 @@
     background: transparent; border: 1px solid #ef4444; color: #ef4444; width: 100%;
   }
   .btn-remove:hover { background: #ef4444; color: white; }
+
+  .fade-in { 
+    animation: fadeIn 0.3s ease-in; 
+  }
+  
+  @keyframes fadeIn { 
+    from { opacity:0; transform:translateY(10px); } 
+    to { opacity:1; transform:translateY(0); } 
+  }
+
+  .loading-spinner {
+    border: 3px solid rgba(255,255,255,0.1);
+    border-top: 3px solid #60a5fa;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 </style>
 </head>
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background: rgba(15,23,42,0.95); border-bottom: 1px solid rgba(255,255,255,0.1);">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="#" style="color:#60a5fa">NovaPlay</a>
+    <a class="navbar-brand fw-bold" href="home.html" style="color:#60a5fa">NovaPlay</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav2">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="nav2">
       <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" href="store.html">Store</a></li>
+        <li class="nav-item"><a class="nav-link" href="home.html">Store</a></li>
         <li class="nav-item"><a class="nav-link active" href="library.html">Library</a></li>
         <li class="nav-item"><a class="nav-link" href="cart.html">Cart</a></li>
       </ul>
       <div class="d-flex align-items-center gap-3">
         <div class="text-end d-none d-md-block">
-            <div class="fw-bold text-white">Gamer123</div>
+            <div class="fw-bold text-white" id="username">Gamer123</div>
             <small class="text-success">Online</small>
         </div>
-        <div class="bg-blue-600 rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:35px; height:35px;">G</div>
+        <button onclick="logout()" class="btn btn-sm btn-outline-light">Logout</button>
+        <div class="bg-blue-600 rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:35px; height:35px;" id="userAvatar">G</div>
       </div>
     </div>
   </div>
@@ -120,77 +144,96 @@
   </div>
 
   <div id="libraryGrid" class="row g-4">
+    <div class="col-12 text-center py-5">
+      <div class="loading-spinner mx-auto"></div>
+      <p class="text-white-50 mt-3">Loading your library...</p>
     </div>
+  </div>
 </main>
 
 <script>
-// --- DATABASE GAME MOCKUP ---
-// (Karena tidak ada game.php, kita pakai data ini dulu biar jalan)
+// --- GLOBAL VARIABLES ---
 let allGames = [];
 let ownedGames = [];
+let gamePlaytimes = {}; // Store playtime for each game
 
 // --- FUNGSI UTAMA ---
 
-// 1. Ambil ID game dari LocalStorage
-// Fitur ini tak fix biar bisa nyambung ke Ajax PHP -nv
+// Load games from server
 async function loadGames() {
   try {
-    const [gamesRes, libRes] = await Promise.all([fetch('game.php'), fetch('library.php')]);
-    allGames = await gamesRes.json();
-    const libIds = await libRes.json();
-
-    // libIds should be an array of numbers
-    const ids = Array.isArray(libIds) ? libIds.map(Number) : [];
-
-    ownedGames = allGames.filter(g => ids.includes(Number(g.id)));
+    // Fetch all games from game.php
+    const gamesResponse = await fetch('game.php');
+    if (!gamesResponse.ok) throw new Error('Failed to fetch games');
+    allGames = await gamesResponse.json();
+    
+    // Fetch library IDs from library.php
+    const libraryResponse = await fetch('library.php');
+    if (!libraryResponse.ok) throw new Error('Failed to fetch library');
+    const libraryData = await libraryResponse.json();
+    
+    // Handle different response formats
+    let libraryIds = [];
+    if (Array.isArray(libraryData)) {
+      libraryIds = libraryData.map(Number);
+    } else if (libraryData.library && Array.isArray(libraryData.library)) {
+      libraryIds = libraryData.library.map(Number);
+    }
+    
+    // Load playtimes from localStorage
+    const savedPlaytimes = localStorage.getItem('gamePlaytimes');
+    if (savedPlaytimes) {
+      gamePlaytimes = JSON.parse(savedPlaytimes);
+    }
+    
+    // Filter owned games
+    ownedGames = allGames.filter(g => libraryIds.includes(Number(g.id)));
+    
+    // Render library
     renderLibrary(ownedGames);
     updateStats(ownedGames);
+    
   } catch (err) {
-    console.error('Failed to load server data, falling back to localStorage:', err);
-    // fallback: read localStorage 'library' and use a small embedded DB if game.php failed
-    const libraryIds = JSON.parse(localStorage.getItem('library') || '[]');
-    // If game.php hasn't responded, try to use embedded fallback DB (optional)
-    if (typeof allGamesDB !== 'undefined' && allGamesDB.length) {
-      ownedGames = allGamesDB.filter(g => libraryIds.includes(g.id));
-      renderLibrary(ownedGames);
-      updateStats(ownedGames);
-    } else {
-      document.getElementById('libraryGrid').innerHTML = `<div class="col-12 text-center text-red-400">Unable to load library (server unreachable).</div>`;
-    }
+    console.error('Error loading games:', err);
+    showError('Unable to load library. Please try again later.');
   }
 }
 
-// 3. Render ke HTML
-function renderLibrary(games){
+// Render library to HTML
+function renderLibrary(games) {
   const grid = document.getElementById('libraryGrid');
   grid.innerHTML = '';
 
-  if(games.length === 0){
+  if (games.length === 0) {
     grid.innerHTML = `
       <div class="col-12 text-center py-5">
         <div class="text-white-50 display-1 mb-3">📂</div>
         <h3 class="text-white">Library is Empty</h3>
         <p class="text-white-50">Visit the Store to add games to your collection.</p>
-        <a href="store.html" class="btn btn-primary mt-2">Go to Store</a>
+        <a href="home.html" class="btn btn-primary mt-2">Go to Store</a>
       </div>`;
     return;
   }
 
   games.forEach(g => {
-    // Generate Random Hours played untuk variasi
-    const hours = Math.floor(Math.random() * 100) + 1; //Sure Why the fuck not -nv
+    // Get playtime for this game, or generate random if not exists
+    if (!gamePlaytimes[g.id]) {
+      gamePlaytimes[g.id] = Math.floor(Math.random() * 100) + 1;
+      localStorage.setItem('gamePlaytimes', JSON.stringify(gamePlaytimes));
+    }
+    const hours = gamePlaytimes[g.id];
 
     const col = document.createElement('div');
-    col.className = 'col-12 col-sm-6 col-md-4 col-lg-3 fade-in';
+    col.className = 'col-12 col-sm-6 col-md-4 col-xl-3 fade-in';
     col.innerHTML = `
       <div class="steam-card">
         <div class="position-relative">
-          <img class="steam-img" src="${g.image}" alt="${g.title}">
+          <img class="steam-img" src="${g.image}" alt="${g.title}" onerror="this.src='https://via.placeholder.com/300x160?text=No+Image'">
           <span class="position-absolute top-0 end-0 m-2 badge bg-success">OWNED</span>
         </div>
         <div class="p-3 d-flex flex-column flex-grow-1">
-          <h5 class="fw-bold mb-1 text-truncate">${g.title}</h5>
-          <div class="text-white-50 small mb-3">${g.genre}</div>
+          <h5 class="fw-bold mb-1 text-truncate" title="${g.title}">${g.title}</h5>
+          <div class="text-white-50 small mb-3">${g.genre || 'Unknown'}</div>
           
           <div class="d-flex justify-content-between align-items-center mb-3 small text-white-50 bg-black/20 p-2 rounded">
             <span>Playtime:</span>
@@ -198,7 +241,7 @@ function renderLibrary(games){
           </div>
 
           <div class="mt-auto d-flex gap-2">
-            <button class="btn btn-sm btn-play rounded" onclick="playGame(this, '${g.title}')">
+            <button class="btn btn-sm btn-play rounded" onclick="playGame(this, '${g.title.replace(/'/g, "\\'")}', ${g.id})">
               ▶ Play
             </button>
             <button class="btn btn-sm btn-remove rounded" onclick="removeFromLibrary(${g.id})">
@@ -211,85 +254,189 @@ function renderLibrary(games){
   });
 }
 
-// 4. Update Stats Dashboard
+// Update stats dashboard
 function updateStats(games) {
   document.getElementById('total-games').innerText = games.length;
-  // Simulasi total jam (random aja karena data dummy)
-  // Bruh -nv
-  document.getElementById('total-hours').innerText = (games.length * 45) + 'h'; 
+  
+  // Calculate total hours from saved playtimes
+  let totalHours = 0;
+  games.forEach(g => {
+    totalHours += gamePlaytimes[g.id] || 0;
+  });
+  
+  document.getElementById('total-hours').innerText = totalHours + 'h';
 }
 
-// 5. Fitur Remove
-// Fitur ini tak fix biar bisa nyambung ke Ajax PHP -nv
-async function removeFromLibrary(id){
-  if(!confirm('Are you sure you want to remove this game?')) return;
+// Remove game from library
+async function removeFromLibrary(id) {
+  if (!confirm('Are you sure you want to remove this game from your library?')) return;
+  
   try {
-    // fetch current server library
-    const resGet = await fetch('library.php');
-    const current = await resGet.json();
-    const updated = (current || []).filter(x => Number(x) !== Number(id));
-    // write updated back to server (POST with new list)
-    const resPost = await fetch('library.php', {
+    // Fetch current library
+    const response = await fetch('library.php');
+    if (!response.ok) throw new Error('Failed to fetch library');
+    
+    const libraryData = await response.json();
+    let currentIds = [];
+    
+    if (Array.isArray(libraryData)) {
+      currentIds = libraryData.map(Number);
+    } else if (libraryData.library && Array.isArray(libraryData.library)) {
+      currentIds = libraryData.library.map(Number);
+    }
+    
+    // Remove the game ID
+    const updatedIds = currentIds.filter(gameId => Number(gameId) !== Number(id));
+    
+    // Update on server
+    const updateResponse = await fetch('library.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: updated })
+      body: JSON.stringify({ ids: updatedIds })
     });
-    const data = await resPost.json();
-    if (data.success) {
-      localStorage.setItem('library', JSON.stringify(data.library));
-      loadGames();
+    
+    if (!updateResponse.ok) throw new Error('Failed to update library');
+    
+    const result = await updateResponse.json();
+    
+    if (result.success) {
+      // Reload library
+      await loadGames();
+      showNotification('Game removed from library', 'success');
     } else {
-      throw new Error(data.message || 'Failed to update server');
+      throw new Error(result.message || 'Failed to remove game');
     }
-  } catch (e) {
-    console.error('Failed to remove on server, falling back to local:', e);
-    let lib = JSON.parse(localStorage.getItem('library') || '[]');
-    lib = lib.filter(x => Number(x) !== Number(id));
-    localStorage.setItem('library', JSON.stringify(lib));
-    loadGames();
+    
+  } catch (err) {
+    console.error('Error removing game:', err);
+    showNotification('Failed to remove game. Please try again.', 'error');
   }
 }
 
-// 6. Fitur Play (Simulasi)
-function playGame(btn, title){
+// Play game simulation
+function playGame(btn, title, gameId) {
   const originalText = btn.innerHTML;
   btn.innerHTML = 'Launching...';
   btn.classList.add('disabled');
   
   setTimeout(() => {
-    alert('Starting game: ' + title);
+    showNotification(`Starting game: ${title}`, 'info');
     btn.innerHTML = 'Running';
-    btn.style.background = '#eab308'; // Ubah jadi kuning
+    btn.style.background = '#eab308';
+    
+    // Increment playtime
+    if (gamePlaytimes[gameId]) {
+      gamePlaytimes[gameId] += 1;
+      localStorage.setItem('gamePlaytimes', JSON.stringify(gamePlaytimes));
+      updateStats(ownedGames);
+    }
     
     setTimeout(() => {
-       btn.innerHTML = originalText;
-       btn.classList.remove('disabled');
-       btn.style.background = '';
+      btn.innerHTML = originalText;
+      btn.classList.remove('disabled');
+      btn.style.background = '';
     }, 3000);
   }, 1000);
 }
 
-// 7. Fitur Search Sederhana
+// Search functionality
 document.getElementById('searchLib').addEventListener('keyup', (e) => {
   const term = e.target.value.toLowerCase();
-//  const libraryIds = getLibrary(); ini gak perlu lagi soalnya udah ada ownedGames -nv
-  const allOwned = allGamesDB.filter(game => libraryIds.includes(game.id));
-  
-  const filtered = allOwned.filter(g => g.title.toLowerCase().includes(term));
+  const filtered = ownedGames.filter(g => 
+    g.title.toLowerCase().includes(term) || 
+    (g.genre && g.genre.toLowerCase().includes(term))
+  );
   renderLibrary(filtered);
 });
 
-// Load saat halaman dibuka
-loadGames();
+// Show error message
+function showError(message) {
+  const grid = document.getElementById('libraryGrid');
+  grid.innerHTML = `
+    <div class="col-12 text-center py-5">
+      <div class="text-danger display-1 mb-3">⚠️</div>
+      <h3 class="text-white">Error</h3>
+      <p class="text-white-50">${message}</p>
+      <button class="btn btn-primary mt-2" onclick="loadGames()">Retry</button>
+    </div>`;
+}
 
-// Animasi Fade In CSS
+// Show notification
+function showNotification(message, type = 'info') {
+  const colors = {
+    success: '#10b981',
+    error: '#ef4444',
+    info: '#60a5fa'
+  };
+  
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    background: ${colors[type]};
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 9999;
+    animation: slideIn 0.3s ease-out;
+  `;
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease-out';
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
+// Load user info from localStorage if available
+function loadUserInfo() {
+  const username = localStorage.getItem('username');
+  if (username) {
+    document.getElementById('username').textContent = username;
+    document.getElementById('userAvatar').textContent = username.charAt(0).toUpperCase();
+  }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+  const username = localStorage.getItem('username');
+  const userId = localStorage.getItem('userId');
+  
+  if (!username || !userId) {
+    alert('Please login to view your library');
+    window.location.href = 'home.html';
+    return;
+  }
+  
+  loadUserInfo();
+  loadGames();
+});
+
+// Add animations
 const style = document.createElement('style');
 style.innerHTML = `
-  .fade-in { animation: fadeIn 0.3s ease-in; }
-  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes slideIn {
+    from { transform: translateX(400px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(400px); opacity: 0; }
+  }
 `;
 document.head.appendChild(style);
 
+// Logout function
+function logout() {
+  localStorage.removeItem('username');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('userRole');
+  alert('You have been logged out');
+  window.location.href = 'home.html';
+}
 </script>
 
 </body>

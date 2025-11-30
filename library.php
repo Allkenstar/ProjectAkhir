@@ -19,12 +19,6 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
     $list = read_storage($storageFile);
-    // HARDCODE FOR TESTING: if empty, return [1, 3, 4]
-    // THIS IS FOR TESTING PURPOSES REMOVE WHEN FINISHED -nv
-    if (empty($list)) {
-        $list = [1, 3, 4];
-    }
-
     echo json_encode(array_values(array_unique(array_map('intval', $list))));
     exit;
 }
@@ -41,6 +35,8 @@ if ($method === 'POST') {
     }
 
     $ids = array_map('intval', $ids);
+    
+    // Get existing library and merge with new IDs
     $existing = read_storage($storageFile);
     $merged = array_values(array_unique(array_merge($existing, $ids)));
 

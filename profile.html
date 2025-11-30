@@ -94,13 +94,13 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background: rgba(15,23,42,0.95); border-bottom: 1px solid rgba(255,255,255,0.1);">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="#" style="color:#60a5fa">NovaPlay</a>
+    <a class="navbar-brand fw-bold" href="home.html" style="color:#60a5fa">NovaPlay</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav2">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="nav2">
       <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" href="store.html">Store</a></li>
+        <li class="nav-item"><a class="nav-link" href="home.html">Store</a></li>
         <li class="nav-item"><a class="nav-link" href="library.html">Library</a></li>
         <li class="nav-item"><a class="nav-link active" href="profile.html">Profile & Wallet</a></li>
       </ul>
@@ -122,16 +122,16 @@
           <div class="status-badge" title="Online"></div>
         </div>
         
-        <h2 class="fw-bold mb-1">Gamer123</h2>
+        <h2 class="fw-bold mb-1">SkibidiSigma</h2>
         <p class="text-white-50 mb-3">Member since 2024</p>
         
         <div class="d-inline-block bg-dark border border-secondary rounded-pill px-3 py-1 mb-4">
-          <span class="text-warning">★</span> Level 42
+          <span class="text-warning">★</span> SuparMan Lvl 1000
         </div>
 
         <div class="d-grid gap-2">
           <button class="btn btn-outline-light" onclick="alert('Edit Profile feature coming soon!')">Edit Profile</button>
-          <button class="btn btn-outline-danger" onclick="alert('Logged out')">Log Out</button>
+          <button class="btn btn-outline-danger" onclick="logout()">Log Out</button>
         </div>
 
         <hr class="border-secondary my-4">
@@ -199,13 +199,13 @@
 
     </div>
   </div>
-</main>
+</main> 
 
 <script>
 // --- DATA DUMMY ---
 const user = {
-  name: "Gamer123",
-  balance: 150.00, // Saldo Awal
+  name: "SkibidiSigma",
+  balance: 200.00, // Saldo Awal
   gamesCount: 8
 };
 
@@ -288,6 +288,26 @@ function addFunds() {
 
 // Jalankan saat load
 initPage();
+
+// Restore login state from localStorage
+function restoreLoginState() {
+  const username = localStorage.getItem('username');
+  if (username) {
+    document.getElementById('username').textContent = username;
+  }
+}
+
+// Logout function
+function logout() {
+  localStorage.removeItem('username');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('userRole');
+  alert('You have been logged out');
+  window.location.href = 'home.html';
+}
+
+// Restore login state on page load
+restoreLoginState();
 </script>
 
 </body>

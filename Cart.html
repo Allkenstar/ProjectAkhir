@@ -59,17 +59,21 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
   <div class="container">
-    <a class="navbar-brand" href="store.html">NovaPlay</a>
+    <a class="navbar-brand fw-bold" href="home.html" style="color:#60a5fa">NovaPlay</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav3">
       <span class="navbar-toggler-icon"></span>
     </button>
 
     <div class="collapse navbar-collapse" id="nav3">
       <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" href="store.html">Store</a></li>
+        <li class="nav-item"><a class="nav-link" href="home.html">Store</a></li>
         <li class="nav-item"><a class="nav-link" href="library.html">Library</a></li>
         <li class="nav-item"><a class="nav-link active" href="cart.html">Cart</a></li>
       </ul>
+      <div class="d-flex align-items-center gap-2">
+        <span id="userDisplay" style="display:none;" class="me-2"></span>
+        <button id="logoutBtn" style="display:none;" class="btn btn-sm btn-outline-light" onclick="logout()">Logout</button>
+      </div>
     </div>
   </div>
 </nav>
@@ -209,6 +213,14 @@ async function clearCart(){
 
 async function checkout(){
   try {
+        const username = localStorage.getItem('username');
+        const userId = localStorage.getItem('userId');
+        if (!username || !userId) {
+            alert('Please login first to checkout.');
+            window.location.href = 'home.html';
+            return;
+        }
+        
         const cart = await getCart();
         if (!cart || cart.length === 0) { alert('Cart is empty'); return; }
 
@@ -237,7 +249,38 @@ async function checkout(){
     }
 }
 
-document.addEventListener('DOMContentLoaded', function(){ renderCart(); });
+document.addEventListener('DOMContentLoaded', function(){ 
+  const username = localStorage.getItem('username');
+  const userId = localStorage.getItem('userId');
+  
+  if (!username || !userId) {
+    alert('Please login to view your cart');
+    window.location.href = 'home.html';
+    return;
+  }
+  
+  restoreLoginState();
+  renderCart(); 
+});
+
+// Restore login state from localStorage
+function restoreLoginState() {
+  const username = localStorage.getItem('username');
+  if (username) {
+    document.getElementById('userDisplay').textContent = username;
+    document.getElementById('userDisplay').style.display = 'inline';
+    document.getElementById('logoutBtn').style.display = 'inline-block';
+  }
+}
+
+// Logout function
+function logout() {
+  localStorage.removeItem('username');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('userRole');
+  alert('You have been logged out');
+  window.location.href = 'home.html';
+}
 </script>
 
 </body>
