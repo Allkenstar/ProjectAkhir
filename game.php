@@ -1,34 +1,50 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 
-$users = [
+// Sample review texts for random selection
+$dummyReviews = [
+    "Amazing game, had a blast!",
+    "Worth every penny, highly recommend.",
+    "Great story and gameplay.",
+    "Fun mechanics and engaging content.",
+    "One of the best in its genre.",
+    "Solid game with good replay value.",
+    "Impressive graphics and sound design.",
+    "Really enjoyed playing this.",
+    "Great value for the price.",
+    "Exceeded my expectations.",
+    "Fun with friends, great multiplayer.",
+    "Unique and memorable experience.",
+    "Good challenge level.",
+    "Beautiful world to explore.",
+    "Kept me entertained for hours."
+];
+
+// Sample reviewer names for randomization
+$dummyReviewers = [
+    "GamerPro", "CasualPlayer", "ActionFan", "RPGLover", "PlaytimeGod",
+    "NoobMaster", "ProGamer88", "SkillSeeker", "JoyfulGamer", "TrueGamer",
+    "SolidGame", "FunTimes", "HappyPlayer", "GamingKing", "ConsoleKid"
+];
+
+$games = [
     [
         'id' => 1,
         'title' => "Cyberpunk 2077",
         'price' => 59.99,
         'genre' => "RPG",
-        'publisher' => "Night City Studios",
-        'rating' => 3.8,
+        'publisher' => "CD Projekt Red",
         'description' => "An open-world action-adventure story set in Night City",
-        'image' => "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop",
-        'reviews' => [
-            ['user' => 'PlayerOne', 'rating' => 4, 'text' => 'Great worldbuilding but buggy when it launched.'],
-            ['user' => 'NightRider', 'rating' => 3, 'text' => 'Fun vibes, needs polish.']
-        ]
+        'image' => "https://image.api.playstation.com/vulcan/ap/rnd/202311/2812/ae84720b553c4ce943e9c342621b60f198beda0dbf533e21.jpg"
     ],
     [
         'id' => 2,
         'title' => "The Witcher 3",
         'price' => 39.99,
         'genre' => "RPG",
-        'publisher' => "CD Projekt",
-        'rating' => 4.9,
+        'publisher' => "CD Projekt Red",
         'description' => "Play as a professional monster hunter",
-        'image' => "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400&h=300&fit=crop",
-        'reviews' => [
-            ['user' => 'GeraltFan', 'rating' => 5, 'text' => 'Masterpiece.'],
-            ['user' => 'LoreReader', 'rating' => 5, 'text' => 'Amazing storytelling and quests.']
-        ]
+        'image' => "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/292030/ad9240e088f953a84aee814034c50a6a92bf4516/header.jpg?t=1761131270"
     ],
     [
         'id' => 3,
@@ -36,27 +52,17 @@ $users = [
         'price' => 49.99,
         'genre' => "Action",
         'publisher' => "Rockstar Games",
-        'rating' => 4.8,
         'description' => "Experience life in the Wild West",
-        'image' => "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=300&fit=crop",
-        'reviews' => [
-            ['user' => 'Outlaw', 'rating' => 5, 'text' => 'Beautiful and immersive.'],
-            ['user' => 'SaddleUp', 'rating' => 4, 'text' => 'Great story but long.']
-        ]
+        'image' => "https://image.api.playstation.com/cdn/UP1004/CUSA03041_00/Hpl5MtwQgOVF9vJqlfui6SDB5Jl4oBSq.png"
     ],
     [
         'id' => 4,
         'title' => "Minecraft",
         'price' => 26.95,
         'genre' => "Sandbox",
-        'publisher' => "Mojang",
-        'rating' => 4.5,
+        'publisher' => "Mojang Studios",
         'description' => "Build, explore, and survive in blocky worlds",
-        'image' => "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=400&h=300&fit=crop",
-        'reviews' => [
-            ['user' => 'BuilderBob', 'rating' => 5, 'text' => 'Endless creativity.'],
-            ['user' => 'Miner99', 'rating' => 4, 'text' => 'Still addictive after years.']
-        ]
+        'image' => "https://www.nintendo.com/eu/media/images/10_share_images/games_15/nintendo_switch_4/2x1_NSwitch_Minecraft.jpg"
     ],
     [
         'id' => 5,
@@ -64,13 +70,8 @@ $users = [
         'price' => 59.99,
         'genre' => "Action RPG",
         'publisher' => "FromSoftware",
-        'rating' => 4.7,
         'description' => "Arise, Tarnished, and explore the Lands Between",
-        'image' => "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=400&h=300&fit=crop",
-        'reviews' => [
-            ['user' => 'Tarnished', 'rating' => 5, 'text' => 'Challenging and rewarding.'],
-            ['user' => 'LoreSeeker', 'rating' => 4, 'text' => 'Beautiful geography and bosses.']
-        ]
+        'image' => "https://image.api.playstation.com/vulcan/ap/rnd/202108/0410/D8mYIXWja8knuqYlwqcqVpi1.jpg"
     ],
     [
         'id' => 6,
@@ -78,16 +79,65 @@ $users = [
         'price' => 29.99,
         'genre' => "Action",
         'publisher' => "Rockstar Games",
-        'rating' => 4.6,
         'description' => "Experience Los Santos in this open-world crime saga",
-        'image' => "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=400&h=300&fit=crop",
-        'reviews' => [
-            ['user' => 'LosSantos', 'rating' => 5, 'text' => 'Endless chaos and fun.'],
-            ['user' => 'DriverX', 'rating' => 4, 'text' => 'Great open-world driving.']
-        ]
+        'image' => "https://image.api.playstation.com/vulcan/ap/rnd/202203/0911/VIB0SeEj9vT6DTv7P4thJLZi.jpg"
     ]
 ];
 
-echo json_encode($users, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+// Function to generate random rating (3.0 to 5.0)
+function generateRandomRating() {
+    return round(3 + (mt_rand(0, 20) / 10), 1);
+}
+
+// Function to generate random reviews (3-5 reviews)
+function generateRandomReviews($dummyReviews, $dummyReviewers) {
+    $numReviews = mt_rand(3, 5);
+    $reviews = [];
+    for ($i = 0; $i < $numReviews; $i++) {
+        $reviews[] = [
+            'user' => $dummyReviewers[array_rand($dummyReviewers)],
+            'rating' => mt_rand(3, 5),
+            'text' => $dummyReviews[array_rand($dummyReviews)]
+        ];
+    }
+    return $reviews;
+}
+
+// Add dynamic rating and reviews to each game
+foreach ($games as &$game) {
+    $game['rating'] = generateRandomRating();
+    $game['reviews'] = generateRandomReviews($dummyReviews, $dummyReviewers);
+}
+unset($game);
+
+// Check if a specific game is requested by title or id
+if (isset($_GET['id'])) {
+    $requestedId = $_GET['id'];
+    // Try to find by numeric ID first
+    if (is_numeric($requestedId)) {
+        $gameId = intval($requestedId);
+        foreach ($games as $game) {
+            if ($game['id'] === $gameId) {
+                echo json_encode($game, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+        }
+    }
+    // Try to find by title (URL decoded)
+    $searchTitle = urldecode($requestedId);
+    foreach ($games as $game) {
+        if (strtolower($game['title']) === strtolower($searchTitle)) {
+            echo json_encode($game, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
+    // Not found
+    http_response_code(404);
+    echo json_encode(['error' => 'Game not found'], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// Return all games if no specific ID requested
+echo json_encode($games, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
 exit;
 ?>

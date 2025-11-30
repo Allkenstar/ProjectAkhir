@@ -16,6 +16,11 @@ function respond($data, $code = 200) {
 }
 
 if ($method === 'GET') {
+    // Debug: if requested, return full session contents (helpful to diagnose empty cart)
+    if (isset($_GET['debug'])) {
+        respond(['success' => true, 'session_id' => session_id(), 'session' => $_SESSION]);
+    }
+
     // Check for test parameter
     if (isset($_GET['test'])) {
         // Run cart tests
@@ -95,9 +100,47 @@ if ($method === 'POST') {
 
         $userId = intval($data['userId']);
 
-        // calculate cart total
+        // calculate cart total (robust parsing: strip currency characters if present)
         $items = array_values($_SESSION['cart']);
-        $total = array_sum(array_map(function($it){ return (float)($it['price'] ?? 0) * intval($it['qty'] ?? 0); }, $items));
+        $parse_price = function($v) {
+            if (is_null($v)) return 0.0;
+            if (is_numeric($v)) return floatval($v);
+            // remove anything except digits, dot and minus
+            $s = preg_replace('/[^0-9.\-]/', '', (string)$v);
+            if ($s === '') return 0.0;
+            return floatval($s);
+        };
+        $total = 0.0;
+        foreach ($items as $it) {
+            $price = $parse_price($it['price'] ?? 0);
+            $qty = intval($it['qty'] ?? 1);
+            $total += $price * $qty;
+        }
+
+        // Prepare library merge and computed items for debug
+        $libraryFile = __DIR__ . '/data/library.json';
+        $existingLib = [];
+        if (file_exists($libraryFile)) {
+            $existingLib = json_decode(file_get_contents($libraryFile), true);
+            if (!is_array($existingLib)) $existingLib = [];
+        }
+
+        $purchasedIds = array_values(array_map(function($it){ return intval($it['id'] ?? 0); }, $items));
+        $mergedLib = array_values(array_unique(array_merge($existingLib, $purchasedIds)));
+
+        $computed_items = [];
+        foreach ($items as $it) {
+            $price = $parse_price($it['price'] ?? 0);
+            $qty = intval($it['qty'] ?? 1);
+            $computed_items[] = [
+                'id' => intval($it['id'] ?? 0),
+                'title' => $it['title'] ?? '',
+                'raw_price' => $it['price'] ?? null,
+                'price' => $price,
+                'qty' => $qty,
+                'subtotal' => $price * $qty
+            ];
+        }
 
         // load users file
         $usersFile = __DIR__ . '/data/users.json';
@@ -137,7 +180,17 @@ if ($method === 'POST') {
                     if (isset($loginJson['success']) && $loginJson['success'] === true) {
                         // success via login.php
                         $_SESSION['cart'] = [];
-                        respond(['success' => true, 'message' => 'Checkout complete', 'total' => $total, 'balance' => $loginJson['balance'], 'items' => [], 'count' => 0]);
+                        respond([
+                            'success' => true,
+                            'message' => 'Checkout complete',
+                            'total' => $total,
+                            'balance' => $loginJson['balance'],
+                            'library' => $mergedLib,
+                            'computed_items' => $computed_items,
+                            'session_cart' => $items,
+                            'items' => [],
+                            'count' => 0
+                        ]);
                     }
                     // else fallthrough to fallback
                 }
@@ -150,9 +203,35 @@ if ($method === 'POST') {
                 }
 
                 // clear cart after successful checkout
-                $_SESSION['cart'] = [];
+                // Also merge purchased ids into library.json (server-side)
+                $libraryFile = __DIR__ . '/data/library.json';
+                $existingLib = [];
+                if (file_exists($libraryFile)) {
+                    $existingLib = json_decode(file_get_contents($libraryFile), true);
+                    if (!is_array($existingLib)) $existingLib = [];
+                }
 
-                respond(['success' => true, 'message' => 'Checkout complete', 'total' => $total, 'balance' => $u['balance'], 'items' => [], 'count' => 0]);
+                $purchasedIds = array_values(array_map(function($it){ return intval($it['id'] ?? 0); }, $items));
+                $mergedLib = array_values(array_unique(array_merge($existingLib, $purchasedIds)));
+                // write library (best-effort)
+                @file_put_contents($libraryFile, json_encode($mergedLib, JSON_PRETTY_PRINT), LOCK_EX);
+
+                // clear cart after successful checkout
+                $_SESSION['cart'] = [];
+                $computed_items = [];
+                foreach ($items as $it) {
+                    $price = $parse_price($it['price'] ?? 0);
+                    $qty = intval($it['qty'] ?? 1);
+                    $computed_items[] = [
+                        'id' => intval($it['id'] ?? 0),
+                        'title' => $it['title'] ?? '',
+                        'raw_price' => $it['price'] ?? null,
+                        'price' => $price,
+                        'qty' => $qty,
+                        'subtotal' => $price * $qty
+                    ];
+                }
+                respond(['success' => true, 'message' => 'Checkout complete', 'total' => $total, 'balance' => $u['balance'], 'library' => $mergedLib, 'computed_items' => $computed_items, 'session_cart' => $items, 'items' => [], 'count' => 0]);
             }
         }
         unset($u);

@@ -96,6 +96,29 @@
             border: 1px solid var(--modal-border) !important;
         }
 
+        /* Theme-aware overrides for common text utility classes */
+        [data-theme="light"] .text-white,
+        [data-theme="light"] .text-white-50 {
+            color: var(--text-primary) !important;
+        }
+
+        /* Keep navbar and card text dark (readable) in light theme */
+        [data-theme="light"] .navbar, [data-theme="light"] .navbar *,
+        [data-theme="light"] .card-hover, [data-theme="light"] .card-hover *,
+        [data-theme="light"] .bg-slate-700, [data-theme="light"] .bg-slate-700 * {
+            color: #ffffff !important;
+        }
+
+        [data-theme="light"] .text-gray-400,
+        [data-theme="light"] .text-gray-300,
+        [data-theme="light"] .text-gray-500,
+        [data-theme="light"] .text-gray-600 {
+            color: var(--text-secondary) !important;
+        }
+
+        [data-theme="light"] .text-blue-400 { color: #1d4ed8 !important; }
+        [data-theme="light"] .text-yellow-400 { color: #b7791f !important; }
+
         .modal-header,
         .modal-footer {
             border-color: var(--modal-border) !important;
@@ -612,7 +635,7 @@
         
         async function checkOwnershipForGames() {
             try {
-                const [libRes, cartRes] = await Promise.all([fetch('library.php'), fetch('cart.php')]);
+                const [libRes, cartRes] = await Promise.all([fetch('library.php'), fetch('cart.php', { credentials: 'same-origin' })]);
                 const libJson = libRes.ok ? await libRes.json() : [];
                 const cartJson = cartRes.ok ? await cartRes.json() : {};
                 const ownedIds = Array.isArray(libJson) ? libJson.map(Number) : (Array.isArray(libJson.ids) ? libJson.ids.map(Number) : []);
@@ -665,7 +688,7 @@
                 }
 
                 // Check server cart for duplicate
-                const cartRes = await fetch('cart.php');
+                const cartRes = await fetch('cart.php', { credentials: 'same-origin' });
                 if (cartRes.ok) {
                     const cartJson = await cartRes.json();
                     const cartItems = Array.isArray(cartJson.items) ? cartJson.items : [];
@@ -691,6 +714,7 @@
 
                 const res = await fetch('cart.php', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'add', item: item })
                 });
@@ -710,7 +734,7 @@
         // Fetch cart from server and update UI badge
         async function getServerCart() {
             try {
-                const res = await fetch('cart.php');
+                const res = await fetch('cart.php', { credentials: 'same-origin' });
                 if (!res.ok) throw new Error('Server cart fetch failed');
                 const json = await res.json();
                 updateCartBadge(json.count || 0);

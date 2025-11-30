@@ -17,6 +17,21 @@
     padding-top:80px
   }
 
+  /* Theme-aware overrides for common text utility classes */
+  [data-theme="light"] .text-white,
+  [data-theme="light"] .text-white-50 {
+    color: var(--text-primary) !important;
+  }
+
+  [data-theme="light"] .text-gray-400,
+  [data-theme="light"] .text-gray-300,
+  [data-theme="light"] .text-gray-500 {
+    color: var(--text-secondary) !important;
+  }
+  /* Keep navbar and card text dark (readable) in light theme */
+  [data-theme="light"] .navbar, [data-theme="light"] .navbar * { color: #ffffff !important; }
+  [data-theme="light"] .item-card, [data-theme="light"] .item-card * { color: #ffffff !important; }
+
   /* ITEM CARD RESPONSIVE */
   .item-card{
     background:#1e293b;
@@ -97,7 +112,7 @@
 
 <script>
 async function getCart() {
-    const res = await fetch('cart.php');
+    const res = await fetch('cart.php', { credentials: 'same-origin' });
     if (!res.ok) throw new Error('Failed to fetch cart: ' + res.status);
     const json = await res.json();
     return Array.isArray(json.items) ? json.items : [];
@@ -107,18 +122,20 @@ async function getCart() {
 async function setCart(items) {
     // clear server cart
     await fetch('cart.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'clear' })
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'clear' })
     });
 
     // add items (if any)
     for (const it of items || []) {
-        await fetch('cart.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'add', item: it })
-        });
+      await fetch('cart.php', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add', item: it })
+      });
     }
 }
 
@@ -197,9 +214,10 @@ async function removeItem(idx){
     const item = cart[idx];
     if (!item || !item.id) throw new Error('Item not found');
     await fetch('cart.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'remove', id: item.id })
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'remove', id: item.id })
     });
     await renderCart();
   } catch(e){
@@ -211,9 +229,10 @@ async function removeItem(idx){
 async function clearCart(){
   try {
         await fetch('cart.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'clear' })
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'clear' })
         });
         await renderCart();
     } catch (e) {
@@ -235,51 +254,27 @@ async function checkout(){
         const cart = await getCart();
         if (!cart || cart.length === 0) { alert('Cart is empty'); return; }
 
-        // Calculate total cost
-        let total = 0;
-        cart.forEach(game => total += parseFloat(game.price) * parseInt(game.qty || 1));
-
-        // Get user balance
-        const balanceRes = await fetch(`login.php?userId=${userId}`);
-        const balanceJson = await balanceRes.json();
-        if (!balanceRes.ok || !balanceJson.success) throw new Error('Failed to get balance');
-
-        const currentBalance = parseFloat(balanceJson.balance);
-
-        // Check if user has enough balance
-        if (currentBalance < total) {
-            alert(`Insufficient balance! You need $${total.toFixed(2)} but only have $${currentBalance.toFixed(2)}.`);
-            return;
+        // Ask server to perform checkout (deduct balance, add to library, clear cart)
+        const resp = await fetch('cart.php', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'checkout', userId: parseInt(userId) })
+        });
+        const json = await resp.json();
+        if (!resp.ok || !json.success) {
+          alert('Checkout failed: ' + (json.message || resp.status));
+          return;
         }
 
-        // Deduct from balance
-        const deductRes = await fetch('login.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: parseInt(userId), amount: -total })
-        });
-        const deductJson = await deductRes.json();
-        if (!deductRes.ok || !deductJson.success) throw new Error('Failed to deduct balance');
+        // Update local stored balance so other pages reflect change
+        if (typeof json.balance !== 'undefined') {
+          const newBalance = parseFloat(json.balance);
+          localStorage.setItem('userBalance', newBalance);
+          console.log('Balance saved to localStorage:', newBalance);
+        }
 
-        const ids = cart.map(it => Number(it.id));
-
-        const libRes = await fetch('library.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids: ids, merge: true })
-        });
-        const libJson = await libRes.json();
-        if (!libRes.ok || !libJson.success) throw new Error(libJson.message || 'Library save failed');
-
-        // clear server cart
-        await fetch('cart.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'clear' })
-        });
-
-        alert(`Purchase successful! ${cart.length} game(s) added to your library.`);
-        // redirect to library
+        alert(`Purchase successful! $${(json.total || 0).toFixed(2)} charged. New balance: $${(json.balance || 0).toFixed(2)}`);
         window.location.href = 'library.html';
     } catch (e) {
         console.error('Checkout failed:', e);

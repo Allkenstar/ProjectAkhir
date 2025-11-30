@@ -55,6 +55,24 @@
     font-family: system-ui, -apple-system, sans-serif;
   }
 
+  /* Theme-aware overrides for common text utility classes */
+  [data-theme="light"] .text-white,
+  [data-theme="light"] .text-white-50 {
+    color: var(--text-primary) !important;
+  }
+
+  [data-theme="light"] .text-gray-400,
+  [data-theme="light"] .text-gray-300,
+  [data-theme="light"] .text-gray-500,
+  [data-theme="light"] .text-gray-600 {
+    color: var(--text-secondary) !important;
+  }
+
+  [data-theme="light"] .text-blue-400 { color: #1d4ed8 !important; }
+  /* Keep navbar and card text dark (readable) in light theme */
+  [data-theme="light"] .navbar, [data-theme="light"] .navbar * { color: #ffffff !important; }
+  [data-theme="light"] .steam-card, [data-theme="light"] .steam-card * { color: #ffffff !important; }
+
   /* --- CARD STYLE (Dipercantik) --- */
   .steam-card { 
     background: rgba(30, 41, 59, 0.7); 
