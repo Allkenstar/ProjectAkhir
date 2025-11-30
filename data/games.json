@@ -1,1 +1,289 @@
-[]
+[
+    {
+        "id": 1,
+        "title": "Cyberpunk 2077",
+        "price": 59.99,
+        "genre": "RPG",
+        "publisher": "CD Projekt Red",
+        "description": "An open-world action-adventure story set in Night City",
+        "image": "https:\/\/image.api.playstation.com\/vulcan\/ap\/rnd\/202311\/2812\/ae84720b553c4ce943e9c342621b60f198beda0dbf533e21.jpg",
+        "rating": 3.3,
+        "reviews": [
+            {
+                "user": "GamerPro",
+                "rating": 5,
+                "text": "Really enjoyed playing this."
+            },
+            {
+                "user": "ActionFan",
+                "rating": 4,
+                "text": "Beautiful world to explore."
+            },
+            {
+                "user": "GamingKing",
+                "rating": 5,
+                "text": "Impressive graphics and sound design."
+            }
+        ]
+    },
+    {
+        "id": 2,
+        "title": "The Witcher 3",
+        "price": 39.99,
+        "genre": "RPG",
+        "publisher": "CD Projekt Red",
+        "description": "Play as a professional monster hunter",
+        "image": "https:\/\/shared.fastly.steamstatic.com\/store_item_assets\/steam\/apps\/292030\/ad9240e088f953a84aee814034c50a6a92bf4516\/header.jpg?t=1761131270",
+        "rating": 3.6,
+        "reviews": [
+            {
+                "user": "JoyfulGamer",
+                "rating": 5,
+                "text": "One of the best in its genre."
+            },
+            {
+                "user": "ProGamer88",
+                "rating": 5,
+                "text": "Beautiful world to explore."
+            },
+            {
+                "user": "PlaytimeGod",
+                "rating": 5,
+                "text": "Really enjoyed playing this."
+            }
+        ]
+    },
+    {
+        "id": 3,
+        "title": "Red Dead Redemption 2",
+        "price": 49.99,
+        "genre": "Action",
+        "publisher": "Rockstar Games",
+        "description": "Experience life in the Wild West",
+        "image": "https:\/\/image.api.playstation.com\/cdn\/UP1004\/CUSA03041_00\/Hpl5MtwQgOVF9vJqlfui6SDB5Jl4oBSq.png",
+        "rating": 4.6,
+        "reviews": [
+            {
+                "user": "NoobMaster",
+                "rating": 3,
+                "text": "Amazing game, had a blast!"
+            },
+            {
+                "user": "NoobMaster",
+                "rating": 3,
+                "text": "Kept me entertained for hours."
+            },
+            {
+                "user": "HappyPlayer",
+                "rating": 5,
+                "text": "Amazing game, had a blast!"
+            },
+            {
+                "user": "ProGamer88",
+                "rating": 5,
+                "text": "Exceeded my expectations."
+            }
+        ]
+    },
+    {
+        "id": 4,
+        "title": "Minecraft",
+        "price": 26.95,
+        "genre": "Sandbox",
+        "publisher": "Mojang Studios",
+        "description": "Build, explore, and survive in blocky worlds",
+        "image": "https:\/\/www.nintendo.com\/eu\/media\/images\/10_share_images\/games_15\/nintendo_switch_4\/2x1_NSwitch_Minecraft.jpg",
+        "rating": 3.2,
+        "reviews": [
+            {
+                "user": "ProGamer88",
+                "rating": 4,
+                "text": "Great value for the price."
+            },
+            {
+                "user": "ProGamer88",
+                "rating": 5,
+                "text": "Impressive graphics and sound design."
+            },
+            {
+                "user": "GamerPro",
+                "rating": 3,
+                "text": "Worth every penny, highly recommend."
+            },
+            {
+                "user": "HappyPlayer",
+                "rating": 4,
+                "text": "Really enjoyed playing this."
+            },
+            {
+                "user": "CasualPlayer",
+                "rating": 5,
+                "text": "Good challenge level."
+            }
+        ]
+    },
+    {
+        "id": 5,
+        "title": "Elden Ring",
+        "price": 59.99,
+        "genre": "Action RPG",
+        "publisher": "FromSoftware",
+        "description": "Arise, Tarnished, and explore the Lands Between",
+        "image": "https:\/\/image.api.playstation.com\/vulcan\/ap\/rnd\/202108\/0410\/D8mYIXWja8knuqYlwqcqVpi1.jpg",
+        "rating": 3.8,
+        "reviews": [
+            {
+                "user": "ActionFan",
+                "rating": 4,
+                "text": "One of the best in its genre."
+            },
+            {
+                "user": "RPGLover",
+                "rating": 3,
+                "text": "Beautiful world to explore."
+            },
+            {
+                "user": "GamingKing",
+                "rating": 3,
+                "text": "Fun mechanics and engaging content."
+            },
+            {
+                "user": "TrueGamer",
+                "rating": 4,
+                "text": "Kept me entertained for hours."
+            }
+        ]
+    },
+    {
+        "id": 6,
+        "title": "GTA V",
+        "price": 29.99,
+        "genre": "Action",
+        "publisher": "Rockstar Games",
+        "description": "Experience Los Santos in this open-world crime saga",
+        "image": "https:\/\/image.api.playstation.com\/vulcan\/ap\/rnd\/202203\/0911\/VIB0SeEj9vT6DTv7P4thJLZi.jpg",
+        "rating": 4.9,
+        "reviews": [
+            {
+                "user": "SkillSeeker",
+                "rating": 3,
+                "text": "Solid game with good replay value."
+            },
+            {
+                "user": "ActionFan",
+                "rating": 4,
+                "text": "Impressive graphics and sound design."
+            },
+            {
+                "user": "ConsoleKid",
+                "rating": 4,
+                "text": "Impressive graphics and sound design."
+            }
+        ]
+    },
+    {
+        "id": 7,
+        "title": "Hollow Knight",
+        "price": 14.99,
+        "genre": "Metroidvania",
+        "publisher": "Team Cherry",
+        "description": "Explore the haunted, ruined kingdom of Hallownest in this atmospheric action-adventure.",
+        "image": "https:\/\/cdn.cloudflare.steamstatic.com\/steam\/apps\/367520\/header.jpg",
+        "rating": 3,
+        "reviews": [
+            {
+                "user": "ActionFan",
+                "rating": 4,
+                "text": "Great value for the price."
+            },
+            {
+                "user": "PlaytimeGod",
+                "rating": 5,
+                "text": "Really enjoyed playing this."
+            },
+            {
+                "user": "HappyPlayer",
+                "rating": 4,
+                "text": "Good challenge level."
+            },
+            {
+                "user": "NoobMaster",
+                "rating": 4,
+                "text": "Fun with friends, great multiplayer."
+            },
+            {
+                "user": "GamerPro",
+                "rating": 5,
+                "text": "Exceeded my expectations."
+            }
+        ]
+    },
+    {
+        "id": 8,
+        "title": "Stardew Valley",
+        "price": 9.99,
+        "genre": "Simulation",
+        "publisher": "ConcernedApe",
+        "description": "Build the farm of your dreams, befriend villagers, and explore caves and festivals.",
+        "image": "https:\/\/shared.fastly.steamstatic.com\/store_item_assets\/steam\/apps\/413150\/capsule_616x353.jpg?t=1754692865",
+        "rating": 4.1,
+        "reviews": [
+            {
+                "user": "ConsoleKid",
+                "rating": 3,
+                "text": "Great story and gameplay."
+            },
+            {
+                "user": "FunTimes",
+                "rating": 4,
+                "text": "Unique and memorable experience."
+            },
+            {
+                "user": "SkillSeeker",
+                "rating": 5,
+                "text": "Great value for the price."
+            }
+        ]
+    },
+    {
+        "id": 9,
+        "title": "Warframe",
+        "price": 0,
+        "genre": "MMO Shooter",
+        "publisher": "Digital Extremes",
+        "description": "A cooperative free-to-play third-person online action game set in an evolving sci-fi world.",
+        "image": "https:\/\/cdn.cloudflare.steamstatic.com\/steam\/apps\/230410\/header.jpg",
+        "rating": 4.4,
+        "reviews": [
+            {
+                "user": "GamerPro",
+                "rating": 3,
+                "text": "Exceeded my expectations."
+            },
+            {
+                "user": "RPGLover",
+                "rating": 3,
+                "text": "Kept me entertained for hours."
+            },
+            {
+                "user": "SolidGame",
+                "rating": 4,
+                "text": "Solid game with good replay value."
+            },
+            {
+                "user": "HappyPlayer",
+                "rating": 5,
+                "text": "Great story and gameplay."
+            }
+        ]
+    },
+    {
+        "id": 10,
+        "title": "asd",
+        "price": 123,
+        "genre": "123",
+        "publisher": "",
+        "description": "123",
+        "image": "123"
+    }
+]

@@ -10,7 +10,7 @@ if (!is_dir($storageDir)) {
     mkdir($storageDir, 0755, true);
 }
 
-// Read admin token from server-only file (recommended)
+// Read admin token 
 $adminTokenFile = $storageDir . '/admin_token.txt';
 $ADMIN_TOKEN = 'admin123';
 if (file_exists($adminTokenFile)) {
@@ -44,7 +44,7 @@ $dummyReviewers = [
     "SolidGame", "FunTimes", "HappyPlayer", "GamingKing", "ConsoleKid"
 ];
 
-// Default games (used if storage is empty)
+// Default games
 $defaultGames = [
     [
         'id' => 1,
@@ -242,7 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Append and persist (we persist the games without generated rating/reviews)
     $persistGames = read_storage($storageFile);
     if (!is_array($persistGames) || count($persistGames) === 0) {
-        // use current $games base (which may be defaults)
+        // use current $games base 
         $persistGames = $games;
     }
 
