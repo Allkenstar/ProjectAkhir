@@ -129,7 +129,9 @@
                     </button>
 
                     <div id="userSection" class="items-center space-x-3" style="display:none;">
-                        <span id="userEmail" class="text-gray-300 hidden sm:block"></span>
+                       <button id="userEmail"
+                            class="text-gray-300 hidden sm:inline-flex items-center px-3 py-1 rounded hover:bg-slate-700"
+                            type="button" onclick="showPage('profile')"></button>
                         <button onclick="logout()"
                             class="p-2 text-gray-300 hover:text-white hover:bg-slate-700 rounded-lg transition">Logout</button>
                     </div>
@@ -298,7 +300,7 @@
         }
         // Showpage function to switch between pages
         function showPage(page) {
-            const pageIds = ['store', 'library', 'cart', 'admin'];
+            const pageIds = ['store', 'library', 'cart', 'admin','profile'];
             // Toggle page visibility
 
             if (page === 'library') {
@@ -307,6 +309,10 @@
             }
             if (page === 'cart') {
                 window.location.href = 'Cart.html';
+                return;
+            }
+            if (page === 'profile') {
+                window.location.href = 'profile.html';
                 return;
             }
 
